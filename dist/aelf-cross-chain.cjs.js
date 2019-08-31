@@ -1202,13 +1202,13 @@ function () {
                   toChainId: chainIdConvertor.base58ToChainId(chainIdReceive),
                   issueChainId: this.issueChainId
                 });
-                
+                console.log('chainId base58: ', paramsSend.issueChainId, paramsSend.toChainId);
                 _context2.next = 6;
                 return tokenContractSend.CrossChainTransfer(paramsSend);
 
               case 6:
                 crossTransferTxId = _context2.sent;
-                
+                console.log('crossTransferTxId: ', crossTransferTxId);
                 transactionId = crossTransferTxId.TransactionId;
                 return _context2.abrupt("return", {
                   toChainId: paramsSend.toChainId,
@@ -1300,14 +1300,14 @@ function () {
                 }));
 
               case 9:
-                
+                console.log('getCrossTransferRawTx crossTransferTxInfo: ', crossTransferTxInfo);
                 _context4.next = 12;
                 return aelfInstance.chain.getBlockByHeight(crossTransferTxInfo.Transaction.RefBlockNumber, false);
 
               case 12:
                 blockInfo = _context4.sent;
-                // 
-                // 
+                // console.log('blockInfo: ', blockInfo);
+                // console.log('crossTransferTxInfo.Transaction.Params: ', crossTransferTxInfo.Transaction.Params);
                 crossTransferRawTx = aelfInstanceTokenContract.CrossChainTransfer.getSignedTx(JSON.parse(crossTransferTxInfo.Transaction.Params), {
                   // height: 124820,
                   height: blockInfo.Header.Height,
@@ -1367,7 +1367,7 @@ function () {
                 _ref8 = _context6.sent;
                 merklePathForParentChainRoot = _ref8.merklePathForParentChainRoot;
                 boundParentChainHeight = _ref8.boundParentChainHeight;
-                this.getBoundParentChainHeightAndMerklePathByHeightCount = 0; // 
+                this.getBoundParentChainHeightAndMerklePathByHeightCount = 0; // console.log('merklePathForParentChainRoot 2333,', merklePathForParentChainRoot, boundParentChainHeight);
 
                 return _context6.abrupt("return", {
                   merklePathForParentChainRoot: merklePathForParentChainRoot,
@@ -1378,7 +1378,7 @@ function () {
                 _context6.prev = 13;
                 _context6.t0 = _context6["catch"](3);
                 this.getBoundParentChainHeightAndMerklePathByHeightCount++;
-                
+                console.log('>>>>>>>>>>>>>>>> Re getBoundParentChainHeightAndMerklePathByHeight <<<<<');
                 return _context6.abrupt("return", new Promise(function (resolve) {
                   setTimeout(
                   /*#__PURE__*/
@@ -1490,7 +1490,7 @@ function () {
                 merklePathForParentChainRoot = _ref11.merklePathForParentChainRoot;
                 boundParentChainHeightTemp = _ref11.boundParentChainHeight;
                 boundParentChainHeight = boundParentChainHeightTemp;
-                merklePath.merklePathNodes = [].concat(toConsumableArray_default()(merklePath.merklePathNodes), toConsumableArray_default()(merklePathForParentChainRoot.merklePathNodes)); // 
+                merklePath.merklePathNodes = [].concat(toConsumableArray_default()(merklePath.merklePathNodes), toConsumableArray_default()(merklePathForParentChainRoot.merklePathNodes)); // console.log('boundParentChainHeight: ', boundParentChainHeightTemp, crossTransferTxBlockHeight);
 
               case 15:
                 return _context7.abrupt("return", {
@@ -1560,8 +1560,8 @@ function () {
                 crossTransferTxBlockHeight = crossTransferTxInfo.BlockNumber, transaction = crossTransferTxInfo.Transaction;
                 preHeight = transaction.RefBlockNumber;
                 isFromMainChain = chainIdConvertor.base58ToChainId(this.chainIdSend) === this.mainChainId;
-                isToMainChain = chainIdConvertor.base58ToChainId(this.chainIdReceive) === this.mainChainId; // 
-                // 
+                isToMainChain = chainIdConvertor.base58ToChainId(this.chainIdReceive) === this.mainChainId; // console.log('isFromMainChain isToMainChain: ', isFromMainChain, isToMainChain);
+                // console.log('lastIrreversibleBlockHeight: ', lastIrreversibleBlockHeight, preHeight);
 
                 if (!(lastIrreversibleBlockHeight >= preHeight)) {
                   _context8.next = 55;
@@ -1586,7 +1586,7 @@ function () {
                 _ref15 = _context8.sent;
                 boundParentChainHeight = _ref15.boundParentChainHeight;
                 merklePath = _ref15.merklePath;
-                // 
+                // console.log('merklePath: ', merklePath);
                 crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
 
                 if (!isFromMainChain) {
@@ -1600,7 +1600,7 @@ function () {
               case 29:
                 _ref16 = _context8.sent;
                 parentChainHeight = _ref16.value;
-                parentChainHeight = parseInt(parentChainHeight, 10); // 
+                parentChainHeight = parseInt(parentChainHeight, 10); // console.log('parentChainHeight: ', parentChainHeight);
                 // If the crossChainContracReceive belongs to mainChain, we will get {value: '-1'};
                 // If the crossChainContracReceive belongs to sideChain.
 
@@ -1786,7 +1786,7 @@ function () {
             switch (_context2.prev = _context2.next) {
               case 0:
                 to = _ref2.to, symbol = _ref2.symbol, amount = _ref2.amount, memo = _ref2.memo;
-                contractsAndChainIds = this.contractsAndChainIds, tokenCrossChainInstance = this.tokenCrossChainInstance; // 
+                contractsAndChainIds = this.contractsAndChainIds, tokenCrossChainInstance = this.tokenCrossChainInstance; // console.log('contractsAndChainIds:', contractsAndChainIds.chainIdSend);
                 // const params = {
                 //   to: receiveAddress,
                 //   symbol: 'ELF',
@@ -1871,10 +1871,10 @@ function () {
                   break;
                 }
 
-                
+                console.log('receiveInfo error canReceive: ', _context4.t0);
                 return _context4.abrupt("return", new Promise(function (resolve) {
-                  
-                  
+                  console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+                  console.log('after 3s, receiving the token & info again');
                   setTimeout(
                   /*#__PURE__*/
                   asyncToGenerator_default()(
@@ -1904,7 +1904,7 @@ function () {
                 }));
 
               case 17:
-                
+                console.log('receiveInfo error: ', _context4.t0);
                 return _context4.abrupt("return", {
                   error: 1,
                   messsage: _context4.t0.message

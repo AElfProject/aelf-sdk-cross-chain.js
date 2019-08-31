@@ -12,8 +12,7 @@ const {
 } = require('./utils');
 
 const browserConfig = {
-  // mode: 'production',
-  mode: 'development',
+  mode: 'production',
   output: {
     path: OUTPUT_PATH,
     filename: 'aelf-cross-chain.umd.js',
@@ -34,27 +33,14 @@ const browserConfig = {
     https: false,
     child_process: false
   },
-  // externals: {
-  //   xmlhttprequest: {
-  //     commonjs2: 'xmlhttprequest',
-  //     commonjs: 'xmlhttprequest',
-  //     umd: 'xmlhttprequest',
-  //     root: 'xmlhttprequest'
-  //   },
-  //   'xhr2-cookies': {
-  //     commonjs2: 'xmlhttprequest',
-  //     commonjs: 'xmlhttprequest',
-  //     umd: 'xmlhttprequest',
-  //     root: 'xmlhttprequest'
-  //   }
-  // },
+  // externals: {},
   target: 'web',
-  // optimization: {
-  //   removeEmptyChunks: true,
-  //   occurrenceOrder: true,
-  //   sideEffects: true,
-  //   minimize: true
-  // }
+  optimization: {
+    removeEmptyChunks: true,
+    occurrenceOrder: true,
+    sideEffects: true,
+    minimize: true
+  }
 };
 
 

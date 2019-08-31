@@ -21,9 +21,7 @@ const nodeConfig = {
     libraryExport: 'default'
   },
   resolve: {
-    alias: {
-      scryptsy$: '../scrypt-polyfill.js',
-    }
+    alias: {}
   },
   target: 'node',
   optimization: {

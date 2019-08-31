@@ -7,7 +7,6 @@
 const path = require('path');
 // eslint-disable-next-line import/no-extraneous-dependencies
 const webpack = require('webpack');
-const { WebpackClearConsole } = require("webpack-clear-console");
 
 const {
   ROOT
@@ -47,8 +46,7 @@ const baseConfig = {
       'process.env.RUNTIME_ENV': JSON.stringify(process.env.RUNTIME_ENV || 'browser'),
       'process.env.SDK_VERSION': JSON.stringify(version)
     }),
-    new webpack.BannerPlugin(banner),
-    new WebpackClearConsole()
+    new webpack.BannerPlugin(banner)
   ]
 };
 
