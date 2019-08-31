@@ -1,0 +1,48 @@
+{
+  "name": "aelf-sdk-cross-chain",
+  "version": "1.0.0",
+  "description": "sdk for cross chain",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AElfProject/aelf-sdk-cross-chain.js.git"
+  },
+  "keywords": [
+    "aelf-sdk-cross-chain"
+  ],
+  "author": "hzz780",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AElfProject/aelf-sdk-cross-chain.js/issues"
+  },
+  "homepage": "https://github.com/AElfProject/aelf-sdk-cross-chain.js#readme",
+  "dependencies": {
+    "chalk": "^2.4.2"
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "babel-eslint": "^10.0.3",
+    "babel-loader": "^8.0.6",
+    "eslint": "^6.2.2",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-babel": "^5.3.0",
+    "eslint-plugin-import": "^2.18.2",
+    "git-cz": "^3.2.1",
+    "husky": "^3.0.4",
+    "lint-staged": "^9.2.5",
+    "webpack": "^4.39.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "node scripts/verify-commit-msg.js"
+    }
+  },
+  "lint-staged": {
+    "*.js": "eslint"
+  }
+}
