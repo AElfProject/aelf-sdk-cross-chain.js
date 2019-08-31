@@ -4,7 +4,8 @@
  * @description
  */
 
-module.exports = class TokenCrossChainBasic {
+// module.exports = class TokenCrossChainBasic {
+export default class TokenCrossChainBasic {
   constructor({
     AElfUtils,
     sendInstance,
@@ -424,4 +425,4 @@ module.exports = class TokenCrossChainBasic {
       }));
     }
   }
-};
+}

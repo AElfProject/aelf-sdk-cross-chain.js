@@ -4,7 +4,8 @@
  * @description utils for crossChain
  */
 
-module.exports = function decodeCrossChainTxFromBase64({
+// module.exports = function decodeCrossChainTxFromBase64({
+export default function decodeCrossChainTxFromBase64({
   AElfPbUtils,
   txBase64,
   tokenContract
@@ -27,7 +28,7 @@ module.exports = function decodeCrossChainTxFromBase64({
     Buffer.from(result.params, 'base64').toString('hex')
   );
   return result;
-};
+}
 
 // Demo
 // decodeCrossChainTxFromBase64({

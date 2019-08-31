@@ -4,9 +4,11 @@
  * @description
  */
 
-const TokenCrossChainBasic = require('./tokenCrossChainBasic');
+// const TokenCrossChainBasic = require('./tokenCrossChainBasic');
+import TokenCrossChainBasic from './tokenCrossChainBasic';
 
-module.exports = class CrossChain {
+// module.exports = class CrossChain {
+export default class CrossChain {
   constructor({
     AElfUtils,
     sendInstance,
@@ -102,4 +104,4 @@ module.exports = class CrossChain {
       };
     }
   }
-};
+}

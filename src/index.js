@@ -4,12 +4,17 @@
  * @description entry of crossChain
  */
 
-const tokenCrossChainBasic = require('./crossChain/tokenCrossChainBasic');
-const crossChain = require('./crossChain/crossChain');
-const utils = require('./crossChain/utils');
+// const TokenCrossChainBasic = require('./crossChain/tokenCrossChainBasic');
+// const CrossChain = require('./crossChain/crossChain');
+// const utils = require('./crossChain/utils');
 
-module.exports = {
-  tokenCrossChainBasic,
-  crossChain,
+import TokenCrossChainBasic from './crossChain/tokenCrossChainBasic';
+import CrossChain from './crossChain/crossChain';
+import utils from './crossChain/utils';
+
+// module.exports = {
+export default {
+  TokenCrossChainBasic,
+  CrossChain,
   utils
 };
