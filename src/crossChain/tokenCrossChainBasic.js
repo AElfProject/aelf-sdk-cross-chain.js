@@ -322,12 +322,8 @@ export default class TokenCrossChainBasic {
     });
 
     const {
-      BlockNumber: crossTransferTxBlockHeight,
-      Transaction: transaction
+      BlockNumber: crossTransferTxBlockHeight
     } = crossTransferTxInfo;
-    const {
-      RefBlockNumber: crossTransferTxRefBlockHeight
-    } = transaction;
 
     const chainIdSend = chainIdConvertor.base58ToChainId(this.chainIdSendBase58);
     const chainIdReceive = chainIdConvertor.base58ToChainId(this.chainIdReceiveBase58);
@@ -340,7 +336,6 @@ export default class TokenCrossChainBasic {
       crossTransferTxInfo,
       crossTransferRawTx,
       crossTransferTxBlockHeight,
-      crossTransferTxRefBlockHeight,
       chainIdSend,
       chainIdReceive,
       isFromMainChain,
@@ -358,22 +353,22 @@ export default class TokenCrossChainBasic {
       crossChainContracReceive
     } = this.aelfInstance;
 
+
     const {
       lastIrreversibleBlockHeight,
       crossTransferTxInfo,
       crossTransferRawTx,
       crossTransferTxBlockHeight,
-      crossTransferTxRefBlockHeight,
       chainIdSend,
       isFromMainChain,
       isToMainChain
-    } = this.recevieInit({
+    } = await this.recevieInit({
       crossTransferTxId
     });
 
     // console.log('isFromMainChain isToMainChain: ', isFromMainChain, isToMainChain);
     // console.log('lastIrreversibleBlockHeight: ', lastIrreversibleBlockHeight, crossTransferTxRefBlockHeight);
-    if (lastIrreversibleBlockHeight >= crossTransferTxRefBlockHeight) {
+    if (lastIrreversibleBlockHeight >= crossTransferTxBlockHeight) {
       if (crossTransferTxInfo.Status && crossTransferTxInfo.Status === 'MINED') {
         const {
           boundParentChainHeight,
@@ -417,12 +412,12 @@ export default class TokenCrossChainBasic {
             value: chainIdSend
           });
 
-          if (sideChainHeightInMainChain < crossTransferTxRefBlockHeight) {
+          if (sideChainHeightInMainChain < crossTransferTxBlockHeight) {
             throw Error(JSON.stringify({
               error: 1,
               message: `The side chains are not ready to receive tx. 
                 The height of the side chain recorded in main chain is ${sideChainHeightInMainChain}.
-                sideChainHeightInMainChain need >= ${crossTransferTxRefBlockHeight}.`,
+                sideChainHeightInMainChain need >= ${crossTransferTxBlockHeight}.`,
               canReceive: true
             }));
           }
@@ -476,7 +471,8 @@ export default class TokenCrossChainBasic {
       throw Error(JSON.stringify({
         error: 2,
         message: `Please waiting until the lastIrreversibleBlockHeight[${lastIrreversibleBlockHeight}] 
-          >= 'the height[${crossTransferTxRefBlockHeight}] of transaction of tokenCrossChainInstance.send()'`,
+          >= 'the height[${crossTransferTxBlockHeight}] of transaction of tokenCrossChainInstance.send()'
+          `,
         canReceive: true
       }));
     }
