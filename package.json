@@ -8,9 +8,7 @@
   "jsdelivr": "dist/aelf-cross-chain.umd.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run clean && npm run build:browser && npm run build:node",
-    "build:browser": "cross-env RUNTIME_ENV=browser webpack --progress --colors --display-chunks --config ./build/webpack.browser.js",
-    "build:node": "cross-env RUNTIME_ENV=node webpack --progress --colors --display-chunks --config ./build/webpack.node.js",
+    "build": "cross-env webpack --progress --colors --display-chunks --config ./build/webpack.umd.js",
     "analyze:node": "npm run clean && cross-env RUNTIME_ENV=node webpack --config ./build/webpack.analyze.js",
     "analyze:browser": "npm run clean && cross-env RUNTIME_ENV=browser webpack --config ./build/webpack.analyze.js",
     "clean": "rimraf dist/*",

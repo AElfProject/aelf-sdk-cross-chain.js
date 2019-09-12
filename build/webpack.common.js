@@ -38,12 +38,7 @@ const baseConfig = {
     }]
   },
   plugins: [
-    // new webpack.IgnorePlugin({
-    //   resourceRegExp: /^\.\/wordlists\/(?!english)/,
-    //   contextRegExp: /bip39\/src$/
-    // }),
     new webpack.DefinePlugin({
-      'process.env.RUNTIME_ENV': JSON.stringify(process.env.RUNTIME_ENV || 'browser'),
       'process.env.SDK_VERSION': JSON.stringify(version)
     }),
     new webpack.BannerPlugin(banner)

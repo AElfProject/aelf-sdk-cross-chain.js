@@ -1,6 +1,6 @@
 /**
  * @file browser config
- * @author atom-yang
+ * @author atom-yang,hzz780
  */
 
 /* eslint-env node */
@@ -11,30 +11,18 @@ const {
   OUTPUT_PATH
 } = require('./utils');
 
-const browserConfig = {
+const umdConfig = {
   mode: 'production',
+  // mode: 'none',
   output: {
     path: OUTPUT_PATH,
     filename: 'aelf-cross-chain.umd.js',
     library: 'AElfCrossChain',
     libraryTarget: 'umd',
+    globalObject: 'this',
     libraryExport: 'default',
     umdNamedDefine: true
   },
-  resolve: {
-    alias: {}
-  },
-  node: {
-    Buffer: true,
-    crypto: true,
-    stream: true,
-    fs: 'empty',
-    http: false,
-    https: false,
-    child_process: false
-  },
-  // externals: {},
-  target: 'web',
   optimization: {
     removeEmptyChunks: true,
     occurrenceOrder: true,
@@ -44,4 +32,4 @@ const browserConfig = {
 };
 
 
-module.exports = merge(baseConfig, browserConfig);
+module.exports = merge(baseConfig, umdConfig);
