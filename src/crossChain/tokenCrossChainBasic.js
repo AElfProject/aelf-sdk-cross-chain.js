@@ -90,8 +90,8 @@ export default class TokenCrossChainBasic {
     this.aelfInstance.tokenContractReceive = tokenContractReceive;
     this.aelfInstance.crossChainContracSend = crossChainContracSend;
     this.aelfInstance.crossChainContracReceive = crossChainContracReceive;
-    this.chainIdSend = chainIdSend;
-    this.chainIdReceive = chainIdReceive;
+    this.chainIdSendBase58 = chainIdSend;
+    this.chainIdReceiveBase58 = chainIdReceive;
 
     return {
       tokenContractSend,
@@ -166,7 +166,7 @@ export default class TokenCrossChainBasic {
       }
       throw Error(JSON.stringify({
         error: 1,
-        message: `${transactionId} is not MINED.`,
+        message: `${transactionId} is not MINED.[${Status}]`,
         canReceive: false
       }));
     }
@@ -288,16 +288,16 @@ export default class TokenCrossChainBasic {
     };
   }
 
-  async receive({
+  async recevieInit({
     crossTransferTxId
   }) {
-    const { chainIdConvertor } = this;
+    const {
+      chainIdConvertor
+    } = this;
     const {
       sendInstance,
       tokenContractSend,
-      tokenContractReceive,
-      crossChainContracSend,
-      crossChainContracReceive
+      tokenContractReceive
     } = this.aelfInstance;
 
     if (!tokenContractReceive || !tokenContractSend) {
@@ -326,14 +326,54 @@ export default class TokenCrossChainBasic {
       Transaction: transaction
     } = crossTransferTxInfo;
     const {
-      RefBlockNumber: preHeight
+      RefBlockNumber: crossTransferTxRefBlockHeight
     } = transaction;
 
-    const isFromMainChain = chainIdConvertor.base58ToChainId(this.chainIdSend) === this.mainChainId;
-    const isToMainChain = chainIdConvertor.base58ToChainId(this.chainIdReceive) === this.mainChainId;
+    const chainIdSend = chainIdConvertor.base58ToChainId(this.chainIdSendBase58);
+    const chainIdReceive = chainIdConvertor.base58ToChainId(this.chainIdReceiveBase58);
+
+    const isFromMainChain = chainIdSend === this.mainChainId;
+    const isToMainChain = chainIdReceive === this.mainChainId;
+
+    return {
+      lastIrreversibleBlockHeight,
+      crossTransferTxInfo,
+      crossTransferRawTx,
+      crossTransferTxBlockHeight,
+      crossTransferTxRefBlockHeight,
+      chainIdSend,
+      chainIdReceive,
+      isFromMainChain,
+      isToMainChain
+    };
+  }
+
+  async receive({
+    crossTransferTxId
+  }) {
+    const {
+      sendInstance,
+      tokenContractReceive,
+      crossChainContracSend,
+      crossChainContracReceive
+    } = this.aelfInstance;
+
+    const {
+      lastIrreversibleBlockHeight,
+      crossTransferTxInfo,
+      crossTransferRawTx,
+      crossTransferTxBlockHeight,
+      crossTransferTxRefBlockHeight,
+      chainIdSend,
+      isFromMainChain,
+      isToMainChain
+    } = this.recevieInit({
+      crossTransferTxId
+    });
+
     // console.log('isFromMainChain isToMainChain: ', isFromMainChain, isToMainChain);
-    // console.log('lastIrreversibleBlockHeight: ', lastIrreversibleBlockHeight, preHeight);
-    if (lastIrreversibleBlockHeight >= preHeight) {
+    // console.log('lastIrreversibleBlockHeight: ', lastIrreversibleBlockHeight, crossTransferTxRefBlockHeight);
+    if (lastIrreversibleBlockHeight >= crossTransferTxRefBlockHeight) {
       if (crossTransferTxInfo.Status && crossTransferTxInfo.Status === 'MINED') {
         const {
           boundParentChainHeight,
@@ -370,6 +410,22 @@ export default class TokenCrossChainBasic {
         } else if (isToMainChain) {
           // side chain to main chain
           crossTransferTxParentBlockHeight = boundParentChainHeight;
+
+          const {
+            value: sideChainHeightInMainChain
+          } = await crossChainContracReceive.GetSideChainHeight.call({
+            value: chainIdSend
+          });
+
+          if (sideChainHeightInMainChain < crossTransferTxRefBlockHeight) {
+            throw Error(JSON.stringify({
+              error: 1,
+              message: `The side chains are not ready to receive tx. 
+                The height of the side chain recorded in main chain is ${sideChainHeightInMainChain}.
+                sideChainHeightInMainChain need >= ${crossTransferTxRefBlockHeight}.`,
+              canReceive: true
+            }));
+          }
         } else {
           // side chain to side chain
           let {
@@ -402,7 +458,7 @@ export default class TokenCrossChainBasic {
         // 侧链可以通过 crossChain 合约，获取发跨链交易时，主链索引的高度
         // 这个合约是系统合约: 'AElf.ContractNames.CrossChain';
         const crossReceiveTxId = await tokenContractReceive.CrossChainReceiveToken({
-          fromChainId: chainIdConvertor.base58ToChainId(this.chainIdSend), // issueChainId,
+          fromChainId: chainIdSend, // issueChainId,
           // parentChainHeight: crossTransferTxBlockHeight, // main chain
           parentChainHeight: crossTransferTxParentBlockHeight, // main chain
           transferTransactionBytes: Buffer.from(crossTransferRawTx, 'hex'),
@@ -420,7 +476,7 @@ export default class TokenCrossChainBasic {
       throw Error(JSON.stringify({
         error: 2,
         message: `Please waiting until the lastIrreversibleBlockHeight[${lastIrreversibleBlockHeight}] 
-          >= 'the height[${preHeight}] of transaction of tokenCrossChainInstance.send()'`,
+          >= 'the height[${crossTransferTxRefBlockHeight}] of transaction of tokenCrossChainInstance.send()'`,
         canReceive: true
       }));
     }
