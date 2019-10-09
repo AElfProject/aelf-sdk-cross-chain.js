@@ -10,7 +10,7 @@ export default class TokenCrossChainBasic {
     AElfUtils,
     sendInstance,
     receiveInstance,
-    mainChainId = 9992731, // AELF
+    mainChainId = 9992731, // AELF: 9992731; TELF: 4200270
     issueChainId = 9992731,
     tokenContractName = 'AElf.ContractNames.Token',
     crossChainContractName = 'AElf.ContractNames.CrossChain',

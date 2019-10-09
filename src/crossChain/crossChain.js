@@ -13,11 +13,15 @@ export default class CrossChain {
     AElfUtils,
     sendInstance,
     receiveInstance,
+    mainChainId = '',
+    issueChainId = '',
     wallet,
     reQueryInterval = 5000
   }) {
     this.sendInstance = sendInstance;
     this.receiveInstance = receiveInstance;
+    this.mainChainId = mainChainId;
+    this.issueChainId = issueChainId;
     this.wallet = wallet;
     this.reQueryInterval = reQueryInterval;
     this.AElfUtils = AElfUtils;
@@ -27,7 +31,9 @@ export default class CrossChain {
     this.tokenCrossChainInstance = new TokenCrossChainBasic({
       AElfUtils: this.AElfUtils,
       sendInstance: this.sendInstance,
-      receiveInstance: this.receiveInstance
+      receiveInstance: this.receiveInstance,
+      mainChainId: this.mainChainId,
+      issueChainId: this.issueChainId
     });
     this.contractsAndChainIds = await this.tokenCrossChainInstance.init({
       wallet: this.wallet
