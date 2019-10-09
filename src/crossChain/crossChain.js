@@ -16,7 +16,8 @@ export default class CrossChain {
     mainChainId = '',
     issueChainId = '',
     wallet,
-    reQueryInterval = 5000
+    reQueryInterval = 5000,
+    queryLimit
   }) {
     this.sendInstance = sendInstance;
     this.receiveInstance = receiveInstance;
@@ -24,6 +25,7 @@ export default class CrossChain {
     this.issueChainId = issueChainId;
     this.wallet = wallet;
     this.reQueryInterval = reQueryInterval;
+    this.queryLimit = queryLimit;
     this.AElfUtils = AElfUtils;
   }
 
@@ -33,7 +35,8 @@ export default class CrossChain {
       sendInstance: this.sendInstance,
       receiveInstance: this.receiveInstance,
       mainChainId: this.mainChainId,
-      issueChainId: this.issueChainId
+      issueChainId: this.issueChainId,
+      queryLimit: this.queryLimit,
     });
     this.contractsAndChainIds = await this.tokenCrossChainInstance.init({
       wallet: this.wallet
@@ -69,6 +72,23 @@ export default class CrossChain {
 
     const sendInfo = await tokenCrossChainInstance.send(contractsAndChainIds, params);
     return sendInfo;
+  }
+
+  async isChainReadyToReceive({
+    crossTransferTxId
+  }) {
+    const {
+      tokenCrossChainInstance
+    } = this;
+
+    try {
+      const result = await tokenCrossChainInstance.isChainReadyToReceive({
+        crossTransferTxId
+      });
+      return !!(result && result.isReady);
+    } catch (e) {
+      return false;
+    }
   }
 
   async receive({

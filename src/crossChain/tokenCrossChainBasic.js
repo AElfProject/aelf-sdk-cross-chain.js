@@ -82,22 +82,22 @@ export default class TokenCrossChainBasic {
     // console.log('----------------------------');
 
     const tokenContractSend = await sendInstance.chain.contractAt(tokenContractAddressSend, wallet);
-    const crossChainContracSend = await sendInstance.chain.contractAt(crossChainContracAddressSend, wallet);
+    const crossChainContractSend = await sendInstance.chain.contractAt(crossChainContracAddressSend, wallet);
     const tokenContractReceive = await receiveInstance.chain.contractAt(tokenContractAddressReceive, wallet);
-    const crossChainContracReceive = await receiveInstance.chain.contractAt(crossChainContracAddressReceive, wallet);
+    const crossChainContractReceive = await receiveInstance.chain.contractAt(crossChainContracAddressReceive, wallet);
 
     this.aelfInstance.tokenContractSend = tokenContractSend;
     this.aelfInstance.tokenContractReceive = tokenContractReceive;
-    this.aelfInstance.crossChainContracSend = crossChainContracSend;
-    this.aelfInstance.crossChainContracReceive = crossChainContracReceive;
+    this.aelfInstance.crossChainContractSend = crossChainContractSend;
+    this.aelfInstance.crossChainContractReceive = crossChainContractReceive;
     this.chainIdSendBase58 = chainIdSend;
     this.chainIdReceiveBase58 = chainIdReceive;
 
     return {
       tokenContractSend,
       tokenContractReceive,
-      crossChainContracSend,
-      crossChainContracReceive,
+      crossChainContractSend,
+      crossChainContractReceive,
       chainIdSend,
       chainIdReceive
     };
@@ -191,8 +191,11 @@ export default class TokenCrossChainBasic {
     };
   }
 
+  // TODO: 可做可不做，调用GetBoundParentChainHeightAndMerklePathByHeight前
+  // 需要先判断当前侧链是否索引了 主链索引侧链跨链交易的区块
+  // 不然会403，报 'Invalid transaction information'
   async getBoundParentChainHeightAndMerklePathByHeight({
-    crossChainContracSend,
+    crossChainContractSend,
     crossTransferTxBlockHeight
   }) {
     if (this.getBoundParentChainHeightAndMerklePathByHeightCount
@@ -203,7 +206,7 @@ export default class TokenCrossChainBasic {
       const {
         merklePathForParentChainRoot,
         boundParentChainHeight
-      } = await crossChainContracSend.GetBoundParentChainHeightAndMerklePathByHeight.call({
+      } = await crossChainContractSend.GetBoundParentChainHeightAndMerklePathByHeight.call({
         value: crossTransferTxBlockHeight
       });
       this.getBoundParentChainHeightAndMerklePathByHeightCount = 0;
@@ -218,7 +221,7 @@ export default class TokenCrossChainBasic {
       return new Promise(resolve => {
         setTimeout(async () => {
           resolve(await this.getBoundParentChainHeightAndMerklePathByHeight({
-            crossChainContracSend,
+            crossChainContractSend,
             crossTransferTxBlockHeight
           }));
         }, this.reQueryInterval);
@@ -246,7 +249,7 @@ export default class TokenCrossChainBasic {
   /* eslint-enable max-len */
   async getMerklePath({
     sendInstance,
-    crossChainContracSend,
+    crossChainContractSend,
     crossTransferTxId,
     crossTransferTxBlockHeight,
     isFromMainChain = false
@@ -273,7 +276,7 @@ export default class TokenCrossChainBasic {
         merklePathForParentChainRoot,
         boundParentChainHeight: boundParentChainHeightTemp
       } = await this.getBoundParentChainHeightAndMerklePathByHeight({
-        crossChainContracSend,
+        crossChainContractSend,
         crossTransferTxBlockHeight
       });
 
@@ -343,16 +346,15 @@ export default class TokenCrossChainBasic {
     };
   }
 
-  async receive({
+  async isChainReadyToReceive({
     crossTransferTxId
   }) {
     const {
       sendInstance,
-      tokenContractReceive,
-      crossChainContracSend,
-      crossChainContracReceive
+      // tokenContractReceive,
+      crossChainContractSend,
+      crossChainContractReceive
     } = this.aelfInstance;
-
 
     const {
       lastIrreversibleBlockHeight,
@@ -375,12 +377,12 @@ export default class TokenCrossChainBasic {
           merklePath
         } = await this.getMerklePath({
           sendInstance,
-          crossChainContracSend,
+          crossChainContractSend,
           crossTransferTxId,
           crossTransferTxBlockHeight,
           isFromMainChain
         });
-        // console.log('merklePath: ', merklePath);
+        console.log('boundParentChainHeight: ', boundParentChainHeight, isFromMainChain, isToMainChain);
 
         let crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
 
@@ -388,12 +390,12 @@ export default class TokenCrossChainBasic {
           // main chain to side chain
           let {
             value: parentChainHeight
-          } = await crossChainContracReceive.GetParentChainHeight.call();
+          } = await crossChainContractReceive.GetParentChainHeight.call();
           parentChainHeight = parseInt(parentChainHeight, 10);
 
           // console.log('parentChainHeight: ', parentChainHeight);
-          // If the crossChainContracReceive belongs to mainChain, we will get {value: '-1'};
-          // If the crossChainContracReceive belongs to sideChain.
+          // If the crossChainContractReceive belongs to mainChain, we will get {value: '-1'};
+          // If the crossChainContractReceive belongs to sideChain.
           if (parentChainHeight >= 0 && (parentChainHeight < crossTransferTxBlockHeight)) {
             throw Error(JSON.stringify({
               error: 1,
@@ -408,9 +410,29 @@ export default class TokenCrossChainBasic {
 
           const {
             value: sideChainHeightInMainChain
-          } = await crossChainContracReceive.GetSideChainHeight.call({
+          } = await crossChainContractReceive.GetSideChainHeight.call({
             value: chainIdSend
           });
+
+          // await = receiveInstance.GetChainStatus.call();
+
+          // let {
+          //   value: sendChainParentChainHeight
+          // } = await crossChainContractSend.GetParentChainHeight.call();
+          // sendChainParentChainHeight = parseInt(sendChainParentChainHeight, 10);
+
+          // console.log('??????---------', crossTransferTxParentBlockHeight, sendChainParentChainHeight);
+
+          // if (sendChainParentChainHeight < crossTransferTxParentBlockHeight) {
+          //   console.log('??????---------', crossTransferTxParentBlockHeight, sendChainParentChainHeight);
+          //   // throw Error(JSON.stringify({
+          //   //   error: 1,
+          //   //   message: `The side chains are not ready to receive tx.
+          //   //     The crossTransferTxParentBlockHeight is ${crossTransferTxParentBlockHeight}.
+          //   //     The block height of parent in side chain is ${sendChainParentChainHeight}.`,
+          //   //   canReceive: true
+          //   // }));
+          // }
 
           if (sideChainHeightInMainChain < crossTransferTxBlockHeight) {
             throw Error(JSON.stringify({
@@ -425,7 +447,7 @@ export default class TokenCrossChainBasic {
           // side chain to side chain
           let {
             value: receiveChainParentChainHeight
-          } = await crossChainContracReceive.GetParentChainHeight.call();
+          } = await crossChainContractReceive.GetParentChainHeight.call();
           receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10);
 
           // When we call this.getMerklePath
@@ -441,25 +463,13 @@ export default class TokenCrossChainBasic {
           crossTransferTxParentBlockHeight = boundParentChainHeight;
         }
 
-        // message CrossChainReceiveTokenInput {
-        //   int32 from_chain_id = 1;
-        //   int64 parent_chain_height = 2;
-        //   bytes transfer_transaction_bytes = 3;
-        //   aelf.MerklePath merkle_path = 4; // 发起交易的块的 merkle_path + 主链的merkle_path
-        // }
-        // 交易确认时
-        // parent_chain_height 永远是发起这笔转账交易时，主链的高度；
-        // 从侧链往主链，则是主链索引侧链包含这个交易的区块的区块高度。
-        // 侧链可以通过 crossChain 合约，获取发跨链交易时，主链索引的高度
-        // 这个合约是系统合约: 'AElf.ContractNames.CrossChain';
-        const crossReceiveTxId = await tokenContractReceive.CrossChainReceiveToken({
-          fromChainId: chainIdSend, // issueChainId,
-          // parentChainHeight: crossTransferTxBlockHeight, // main chain
-          parentChainHeight: crossTransferTxParentBlockHeight, // main chain
-          transferTransactionBytes: Buffer.from(crossTransferRawTx, 'hex'),
-          merklePath
-        });
-        return crossReceiveTxId;
+        return {
+          isReady: true,
+          crossTransferRawTx,
+          chainIdSend,
+          merklePath,
+          crossTransferTxParentBlockHeight
+        };
       }
       throw Error(JSON.stringify({
         error: 3,
@@ -476,5 +486,40 @@ export default class TokenCrossChainBasic {
         canReceive: true
       }));
     }
+  }
+
+  async receive({
+    crossTransferTxId
+  }) {
+    const {
+      crossTransferRawTx,
+      chainIdSend,
+      merklePath,
+      crossTransferTxParentBlockHeight
+    } = await this.isChainReadyToReceive({
+      crossTransferTxId
+    });
+    const {
+      tokenContractReceive
+    } = this.aelfInstance;
+    // message CrossChainReceiveTokenInput {
+    //   int32 from_chain_id = 1;
+    //   int64 parent_chain_height = 2;
+    //   bytes transfer_transaction_bytes = 3;
+    //   aelf.MerklePath merkle_path = 4; // 发起交易的块的 merkle_path + 主链的merkle_path
+    // }
+    // 交易确认时
+    // parent_chain_height 永远是发起这笔转账交易时，主链的高度；
+    // 从侧链往主链，则是主链索引侧链包含这个交易的区块的区块高度。
+    // 侧链可以通过 crossChain 合约，获取发跨链交易时，主链索引的高度
+    // 这个合约是系统合约: 'AElf.ContractNames.CrossChain';
+    const crossReceiveTxId = await tokenContractReceive.CrossChainReceiveToken({
+      fromChainId: chainIdSend, // issueChainId,
+      // parentChainHeight: crossTransferTxBlockHeight, // main chain
+      parentChainHeight: crossTransferTxParentBlockHeight, // main chain
+      transferTransactionBytes: Buffer.from(crossTransferRawTx, 'hex'),
+      merklePath
+    });
+    return crossReceiveTxId;
   }
 }
