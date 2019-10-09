@@ -81,14 +81,9 @@ export default class CrossChain {
       tokenCrossChainInstance
     } = this;
 
-    try {
-      const result = await tokenCrossChainInstance.isChainReadyToReceive({
-        crossTransferTxId
-      });
-      return !!(result && result.isReady);
-    } catch (e) {
-      return false;
-    }
+    return tokenCrossChainInstance.isChainReadyToReceive({
+      crossTransferTxId
+    }).then(() => true).catch(() => false);
   }
 
   async receive({

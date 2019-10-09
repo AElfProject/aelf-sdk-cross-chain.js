@@ -200,7 +200,8 @@ export default class TokenCrossChainBasic {
   }) {
     if (this.getBoundParentChainHeightAndMerklePathByHeightCount
       >= this.getBoundParentChainHeightAndMerklePathByHeightLimit) {
-      throw Error('getBoundParentChainHeightAndMerklePathByHeight too many times!');
+      return Promise.reject(new Error('getBoundParentChainHeightAndMerklePathByHeight too many times!'));
+      // throw Error('getBoundParentChainHeightAndMerklePathByHeight too many times!');
     }
     try {
       const {
@@ -218,12 +219,16 @@ export default class TokenCrossChainBasic {
     } catch (e) {
       this.getBoundParentChainHeightAndMerklePathByHeightCount++;
       console.log('>>>>>>>>>>>>>>>> Re getBoundParentChainHeightAndMerklePathByHeight <<<<<');
-      return new Promise(resolve => {
-        setTimeout(async () => {
-          resolve(await this.getBoundParentChainHeightAndMerklePathByHeight({
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          this.getBoundParentChainHeightAndMerklePathByHeight({
             crossChainContractSend,
             crossTransferTxBlockHeight
-          }));
+          }).then(resolve).catch(reject);
+          // resolve(await this.getBoundParentChainHeightAndMerklePathByHeight({
+          //   crossChainContractSend,
+          //   crossTransferTxBlockHeight
+          // }));
         }, this.reQueryInterval);
       });
     }
