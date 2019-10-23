@@ -121,7 +121,7 @@ export default class CrossChain {
       console.log('receiveInfo error: ', error);
       return {
         error: 1,
-        messsage: error.message
+        message: error
       };
     }
   }
