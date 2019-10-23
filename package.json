@@ -1,6 +1,6 @@
 {
   "name": "aelf-sdk-cross-chain",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "sdk for cross chain",
   "main": "dist/aelf-cross-chain.umd.js",
   "browser": "dist/aelf-cross-chain.umd.js",
