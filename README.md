@@ -35,8 +35,7 @@ In our dist directory, we support different packages for different platforms, su
 
 packages | usage
 ---|---
-dist/aelf-cross-chain.cjs.js | built for node, remove node-built modules such as crypto.
-dist/aelf-cross-chain.umd.js | built for browser, add some node modules by webpack
+dist/aelf-cross-chain.umd.js | built for browser & node, add some node modules by webpack
 
 You can choose any packages based on what you need, for examples:
 
@@ -91,7 +90,7 @@ module.exports = {
   // ...
   resolve: {
     alias: {
-      'aelf-sdk-cross-chain': 'aelf-sdk-cross-chain/dist/aelf-cross-chain.cjs.js'
+      'aelf-sdk-cross-chain': 'aelf-sdk-cross-chain/dist/aelf-cross-chain.umd.js'
     }
   }
 }
@@ -106,7 +105,7 @@ rollup({
   // ...
   plugins: [
     alias({
-      'aelf-sdk-cross-chain': require.resolve('aelf-sdk-cross-chain/dist/aelf-cross-chain.cjs.js')
+      'aelf-sdk-cross-chain': require.resolve('aelf-sdk-cross-chain/dist/aelf-cross-chain.umd.js')
     })
   ]
 })
@@ -144,6 +143,19 @@ async function init() {
     wallet,
   });
   await crossChainInstance.init();
+  // Can accelerate the process. About 5s.
+  // await crossChainInstance.init({
+  //   contractAddresses: {
+  //     tokenContractAddressSend: '25CecrU94dmMdbhC3LWMKxtoaL4Wv8PChGvVJM6PxkHAyvXEhB',
+  //     crossChainContractAddressSend: 'R8nWLhsyLsY9Di4ULKQ41ddV8j1HbLikT3RjbLBDPGxnJFCv3',
+  //     tokenContractAddressReceive: 'NCsfF8mqPNwaPxps9zvZcYb9RJmMbuD47vu2UY1LypCPZ7DP7',
+  //     crossChainContractAddressReceive: '28PhWPnGzuZ8fxGLfJjJFYZ8eGbANWSasAdH9sFsnhZ8ZC7x9G'
+  //   },
+  //   chainIds: {
+  //     chainIdSend: 'AELF',
+  //     chainIdReceive: 'tDVV'
+  //   }
+  // });
 
   const {
     crossTransferTxId

@@ -5,6 +5,10 @@
  */
 
 // module.exports = class TokenCrossChainBasic {
+import {
+  getChainIdsAndContractAddresses
+} from './utils';
+
 export default class TokenCrossChainBasic {
   constructor({
     AElfUtils,
@@ -43,7 +47,9 @@ export default class TokenCrossChainBasic {
   }
 
   async init({
-    wallet
+    wallet,
+    contractAddresses,
+    chainIds
   }) {
     const {
       sendInstance,
@@ -56,35 +62,27 @@ export default class TokenCrossChainBasic {
     } = this;
 
     const {
-      GenesisContractAddress: genesisContractAddressSend,
-      ChainId: chainIdSend
-    } = await sendInstance.chain.getChainStatus();
-    const {
-      GenesisContractAddress: genesisContractAddressReceive,
-      ChainId: chainIdReceive
-    } = await receiveInstance.chain.getChainStatus();
-
-    // console.log('chainId raw: ', chainIdSend, chainIdReceive);
-    // console.log('----------------------------');
-
-    const genesisContractInstanceSend = await sendInstance.chain.contractAt(genesisContractAddressSend, wallet);
-    /* eslint-disable max-len */
-    const genesisContractInstanceReceive = await receiveInstance.chain.contractAt(genesisContractAddressReceive, wallet);
-    const tokenContractAddressSend = await genesisContractInstanceSend.GetContractAddressByName.call(sha256(tokenContractName));
-    const crossChainContracAddressSend = await genesisContractInstanceSend.GetContractAddressByName.call(sha256(crossChainContractName));
-    const tokenContractAddressReceive = await genesisContractInstanceReceive.GetContractAddressByName.call(sha256(tokenContractName));
-    const crossChainContracAddressReceive = await genesisContractInstanceReceive.GetContractAddressByName.call(sha256(crossChainContractName));
-    /* eslint-enable max-len */
-
-    // console.log('token: ', tokenContractAddressSend, tokenContractAddressReceive);
-    // console.log('----------------------------');
-    // console.log('crossChain: ', crossChainContracAddressSend, crossChainContracAddressReceive);
-    // console.log('----------------------------');
+      tokenContractAddressSend,
+      crossChainContractAddressSend,
+      tokenContractAddressReceive,
+      crossChainContractAddressReceive,
+      chainIdSend,
+      chainIdReceive
+    } = await getChainIdsAndContractAddresses({
+      contractAddresses,
+      chainIds,
+      sendInstance,
+      receiveInstance,
+      wallet,
+      sha256,
+      tokenContractName,
+      crossChainContractName
+    });
 
     const tokenContractSend = await sendInstance.chain.contractAt(tokenContractAddressSend, wallet);
-    const crossChainContractSend = await sendInstance.chain.contractAt(crossChainContracAddressSend, wallet);
+    const crossChainContractSend = await sendInstance.chain.contractAt(crossChainContractAddressSend, wallet);
     const tokenContractReceive = await receiveInstance.chain.contractAt(tokenContractAddressReceive, wallet);
-    const crossChainContractReceive = await receiveInstance.chain.contractAt(crossChainContracAddressReceive, wallet);
+    const crossChainContractReceive = await receiveInstance.chain.contractAt(crossChainContractAddressReceive, wallet);
 
     this.aelfInstance.tokenContractSend = tokenContractSend;
     this.aelfInstance.tokenContractReceive = tokenContractReceive;
@@ -127,8 +125,10 @@ export default class TokenCrossChainBasic {
       issueChainId: this.issueChainId
     };
 
-    console.log('chainId base58: ', paramsSend.issueChainId, paramsSend.toChainId);
+    console.log('chainId base58: ', paramsSend.issueChainId, paramsSend.toChainId, paramsSend);
 
+    // if memo === '', set memo = null
+    paramsSend.memo = paramsSend.memo || null;
     const crossTransferTxId = await tokenContractSend.CrossChainTransfer(paramsSend);
     console.log('crossTransferTxId: ', crossTransferTxId);
     const {
@@ -173,18 +173,16 @@ export default class TokenCrossChainBasic {
 
     console.log('getCrossTransferRawTx crossTransferTxInfo: ', crossTransferTxInfo);
     const blockInfo = await aelfInstance.chain.getBlockByHeight(crossTransferTxInfo.Transaction.RefBlockNumber, false);
-
     // console.log('blockInfo: ', blockInfo);
     // console.log('crossTransferTxInfo.Transaction.Params: ', crossTransferTxInfo.Transaction.Params);
     const crossTransferRawTx = aelfInstanceTokenContract.CrossChainTransfer.getSignedTx(
       JSON.parse(crossTransferTxInfo.Transaction.Params),
       {
-        // height: 124820,
         height: blockInfo.Header.Height,
-        // hash: '969e0f4d83cd84fd7273a39f537f4cc37805f9663c93457520dd93c1fa71a19f'
         hash: blockInfo.BlockHash
       }
     );
+
     return {
       crossTransferTxInfo,
       crossTransferRawTx
@@ -205,20 +203,22 @@ export default class TokenCrossChainBasic {
     }
     try {
       const {
-        merklePathForParentChainRoot,
+        merklePathFromParentChain,
+        // merklePathForParentChainRoot,
         boundParentChainHeight
       } = await crossChainContractSend.GetBoundParentChainHeightAndMerklePathByHeight.call({
         value: crossTransferTxBlockHeight
       });
       this.getBoundParentChainHeightAndMerklePathByHeightCount = 0;
-      // console.log('merklePathForParentChainRoot 2333,', merklePathForParentChainRoot, boundParentChainHeight);
+      // console.log('merklePathFromParentChain 2333,', merklePathFromParentChain, testData, boundParentChainHeight);
       return {
-        merklePathForParentChainRoot,
+        merklePathFromParentChain,
         boundParentChainHeight
       };
     } catch (e) {
       this.getBoundParentChainHeightAndMerklePathByHeightCount++;
       console.log('>>>>>>>>>>>>>>>> Re getBoundParentChainHeightAndMerklePathByHeight <<<<<');
+      console.log(crossTransferTxBlockHeight, e);
       return new Promise((resolve, reject) => {
         setTimeout(() => {
           this.getBoundParentChainHeightAndMerklePathByHeight({
@@ -278,15 +278,17 @@ export default class TokenCrossChainBasic {
       // If we can not GetBoundParentChainHeightAndMerklePathByHeight from the chain
       // It will throw a error.
       const {
-        merklePathForParentChainRoot,
+        merklePathFromParentChain,
         boundParentChainHeight: boundParentChainHeightTemp
       } = await this.getBoundParentChainHeightAndMerklePathByHeight({
         crossChainContractSend,
         crossTransferTxBlockHeight
       });
 
+      // console.log('merklePathFromParentChain: ', merklePath, merklePathFromParentChain);
+
       boundParentChainHeight = boundParentChainHeightTemp;
-      merklePath.merklePathNodes = [...merklePath.merklePathNodes, ...merklePathForParentChainRoot.merklePathNodes];
+      merklePath.merklePathNodes = [...merklePath.merklePathNodes, ...merklePathFromParentChain.merklePathNodes];
       // console.log('boundParentChainHeight: ', boundParentChainHeightTemp, crossTransferTxBlockHeight);
     }
 

@@ -29,7 +29,7 @@ export default class CrossChain {
     this.AElfUtils = AElfUtils;
   }
 
-  async init() {
+  async init(initOptions) {
     this.tokenCrossChainInstance = new TokenCrossChainBasic({
       AElfUtils: this.AElfUtils,
       sendInstance: this.sendInstance,
@@ -38,8 +38,16 @@ export default class CrossChain {
       issueChainId: this.issueChainId,
       queryLimit: this.queryLimit,
     });
+
+    const {
+      contractAddresses,
+      chainIds
+    } = initOptions;
+
     this.contractsAndChainIds = await this.tokenCrossChainInstance.init({
-      wallet: this.wallet
+      wallet: this.wallet,
+      contractAddresses,
+      chainIds
     });
   }
 

@@ -5,7 +5,7 @@
  */
 
 // module.exports = function decodeCrossChainTxFromBase64({
-export default function decodeCrossChainTxFromBase64({
+export function decodeCrossChainTxFromBase64({
   AElfPbUtils,
   txBase64,
   tokenContract
@@ -37,3 +37,74 @@ export default function decodeCrossChainTxFromBase64({
 // 4LQN3DUg0LU2O9l3UBTXfkuP6DKUbQ44JXMdiRJ7gToSA0VMRhgCIh9IZWxsb0tpdHR5IGNyb3NzIGNoYWluIHRy
 // YW5zZmVyKIL0pwEwm/ThBILxBEHcVPiIdDsRTrASLMNdS1VChGKVw1hVfchCpcynCNaA+U3nvo5AW84Lia+HQHUA
 // J2RtmaULu8ySzVkDMiIbv69UAA==`, tokenContract});
+
+export async function getChainIdsAndContractAddresses(options) {
+  const {
+    contractAddresses,
+    chainIds,
+    sendInstance,
+    receiveInstance,
+    wallet,
+    sha256,
+    tokenContractName,
+    crossChainContractName
+  } = options;
+  if (contractAddresses && chainIds) {
+    const {
+      tokenContractAddressSend,
+      crossChainContractAddressSend,
+      tokenContractAddressReceive,
+      crossChainContractAddressReceive
+    } = contractAddresses;
+    const {
+      chainIdSend,
+      chainIdReceive
+    } = chainIds;
+    const output = {
+      tokenContractAddressSend,
+      crossChainContractAddressSend,
+      tokenContractAddressReceive,
+      crossChainContractAddressReceive,
+      chainIdSend,
+      chainIdReceive
+    };
+    let returnOutput = true;
+    Object.keys(output).forEach(key => {
+      if (!output[key]) {
+        returnOutput = false;
+      }
+    });
+    if (returnOutput) {
+      return output;
+    }
+  }
+
+  const {
+    GenesisContractAddress: genesisContractAddressSend,
+    ChainId: chainIdSend
+  } = await sendInstance.chain.getChainStatus();
+  const {
+    GenesisContractAddress: genesisContractAddressReceive,
+    ChainId: chainIdReceive
+  } = await receiveInstance.chain.getChainStatus();
+
+  // console.log('chainId raw: ', chainIdSend, chainIdReceive);
+  // console.log('----------------------------');
+
+  const genesisContractInstanceSend = await sendInstance.chain.contractAt(genesisContractAddressSend, wallet);
+  /* eslint-disable max-len */
+  const genesisContractInstanceReceive = await receiveInstance.chain.contractAt(genesisContractAddressReceive, wallet);
+  const tokenContractAddressSend = await genesisContractInstanceSend.GetContractAddressByName.call(sha256(tokenContractName));
+  const crossChainContractAddressSend = await genesisContractInstanceSend.GetContractAddressByName.call(sha256(crossChainContractName));
+  const tokenContractAddressReceive = await genesisContractInstanceReceive.GetContractAddressByName.call(sha256(tokenContractName));
+  const crossChainContractAddressReceive = await genesisContractInstanceReceive.GetContractAddressByName.call(sha256(crossChainContractName));
+  // }
+  return {
+    tokenContractAddressSend,
+    crossChainContractAddressSend,
+    tokenContractAddressReceive,
+    crossChainContractAddressReceive,
+    chainIdSend,
+    chainIdReceive
+  };
+}
