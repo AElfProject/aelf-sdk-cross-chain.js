@@ -79,10 +79,18 @@ export default class TokenCrossChainBasic {
       crossChainContractName
     });
 
-    const tokenContractSend = await sendInstance.chain.contractAt(tokenContractAddressSend, wallet);
-    const crossChainContractSend = await sendInstance.chain.contractAt(crossChainContractAddressSend, wallet);
-    const tokenContractReceive = await receiveInstance.chain.contractAt(tokenContractAddressReceive, wallet);
-    const crossChainContractReceive = await receiveInstance.chain.contractAt(crossChainContractAddressReceive, wallet);
+    // the user response to the try catch
+    const [
+      tokenContractSend,
+      crossChainContractSend,
+      tokenContractReceive,
+      crossChainContractReceive
+    ] = await Promise.all([
+      sendInstance.chain.contractAt(tokenContractAddressSend, wallet),
+      sendInstance.chain.contractAt(crossChainContractAddressSend, wallet),
+      receiveInstance.chain.contractAt(tokenContractAddressReceive, wallet),
+      receiveInstance.chain.contractAt(crossChainContractAddressReceive, wallet)
+    ]);
 
     this.aelfInstance.tokenContractSend = tokenContractSend;
     this.aelfInstance.tokenContractReceive = tokenContractReceive;
