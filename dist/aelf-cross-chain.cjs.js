@@ -1,5 +1,5 @@
 /*!
- * aelf-sdk-cross-chain.js v1.0.10 
+ * aelf-sdk-cross-chain.js v1.0.11 
  * (c) 2019-2020 AElf 
  * Released under MIT License
  */
@@ -1288,6 +1288,7 @@ function () {
     this.reQueryInterval = reQueryInterval;
     this.getBoundParentChainHeightAndMerklePathByHeightLimit = queryLimit;
     this.getBoundParentChainHeightAndMerklePathByHeightCount = 0;
+    this.getBoundParentChainHeightAndMerklePathByHeightError = null;
     var sha256 = AElfUtils.sha256,
         chainIdConvertor = AElfUtils.chainIdConvertor;
     this.sha256 = sha256;
@@ -1300,13 +1301,13 @@ function () {
       var _init = asyncToGenerator_default()(
       /*#__PURE__*/
       regenerator_default.a.mark(function _callee(_ref2) {
-        var wallet, contractAddresses, chainIds, _this$aelfInstance, sendInstance, receiveInstance, tokenContractName, crossChainContractName, sha256, _ref3, tokenContractAddressSend, crossChainContractAddressSend, tokenContractAddressReceive, crossChainContractAddressReceive, chainIdSend, chainIdReceive, _ref4, _ref5, tokenContractSend, crossChainContractSend, tokenContractReceive, crossChainContractReceive;
+        var wallet, _ref2$contractAddress, contractAddresses, _ref2$chainIds, chainIds, _this$aelfInstance, sendInstance, receiveInstance, tokenContractName, crossChainContractName, sha256, _ref3, tokenContractAddressSend, crossChainContractAddressSend, tokenContractAddressReceive, crossChainContractAddressReceive, chainIdSend, chainIdReceive, _ref4, _ref5, tokenContractSend, crossChainContractSend, tokenContractReceive, crossChainContractReceive;
 
         return regenerator_default.a.wrap(function _callee$(_context) {
           while (1) {
             switch (_context.prev = _context.next) {
               case 0:
-                wallet = _ref2.wallet, contractAddresses = _ref2.contractAddresses, chainIds = _ref2.chainIds;
+                wallet = _ref2.wallet, _ref2$contractAddress = _ref2.contractAddresses, contractAddresses = _ref2$contractAddress === void 0 ? null : _ref2$contractAddress, _ref2$chainIds = _ref2.chainIds, chainIds = _ref2$chainIds === void 0 ? null : _ref2$chainIds;
                 _this$aelfInstance = this.aelfInstance, sendInstance = _this$aelfInstance.sendInstance, receiveInstance = _this$aelfInstance.receiveInstance;
                 tokenContractName = this.tokenContractName, crossChainContractName = this.crossChainContractName, sha256 = this.sha256;
                 _context.next = 5;
@@ -1547,7 +1548,7 @@ function () {
                   break;
                 }
 
-                return _context5.abrupt("return", Promise.reject(new Error('getBoundParentChainHeightAndMerklePathByHeight too many times!')));
+                return _context5.abrupt("return", Promise.reject(this.getBoundParentChainHeightAndMerklePathByHeightError));
 
               case 3:
                 _context5.prev = 3;
@@ -1570,6 +1571,7 @@ function () {
               case 13:
                 _context5.prev = 13;
                 _context5.t0 = _context5["catch"](3);
+                this.getBoundParentChainHeightAndMerklePathByHeightError = _context5.t0;
                 this.getBoundParentChainHeightAndMerklePathByHeightCount++;
                 return _context5.abrupt("return", new Promise(function (resolve, reject) {
                   setTimeout(function () {
@@ -1584,7 +1586,7 @@ function () {
                   }, _this2.reQueryInterval);
                 }));
 
-              case 17:
+              case 18:
               case "end":
                 return _context5.stop();
             }
@@ -1871,7 +1873,7 @@ function () {
 
                 throw Error(JSON.stringify({
                   error: 1,
-                  message: "The side chains are not ready to receive tx. \n                The height of the side chain recorded in main chain is ".concat(sideChainHeightInMainChain, ".\n                sideChainHeightInMainChain need >= ").concat(crossTransferTxBlockHeight, "."),
+                  message: "The side chains are not ready to receive tx.\n                The height of the side chain recorded in main chain is ".concat(sideChainHeightInMainChain, ".\n                sideChainHeightInMainChain need >= ").concat(crossTransferTxBlockHeight, "."),
                   canReceive: true
                 }));
 
@@ -1895,7 +1897,7 @@ function () {
 
                 throw Error(JSON.stringify({
                   error: 1,
-                  message: "The side chains are not ready to receive tx. \n                The boundParentChainHeight of crossChainTransfer is ".concat(boundParentChainHeight, " \n                The parentChainHeight of the chain which receives the tx is ").concat(receiveChainParentChainHeight, "."),
+                  message: "The side chains are not ready to receive tx.\n                The boundParentChainHeight of crossChainTransfer is ".concat(boundParentChainHeight, "\n                The parentChainHeight of the chain which receives the tx is ").concat(receiveChainParentChainHeight, "."),
                   canReceive: true
                 }));
 
@@ -1921,7 +1923,7 @@ function () {
               case 52:
                 throw Error(JSON.stringify({
                   error: 2,
-                  message: "Please waiting until the lastIrreversibleBlockHeight[".concat(lastIrreversibleBlockHeight, "] \n          >= 'the height[").concat(crossTransferTxBlockHeight, "] of transaction of tokenCrossChainInstance.send()'\n          "),
+                  message: "Please waiting until the lastIrreversibleBlockHeight[".concat(lastIrreversibleBlockHeight, "]\n          >= 'the height[").concat(crossTransferTxBlockHeight, "] of transaction of tokenCrossChainInstance.send()'\n          "),
                   canReceive: true
                 }));
 
@@ -2161,9 +2163,18 @@ function () {
                 return _context3.abrupt("return", tokenCrossChainInstance.isChainReadyToReceive({
                   crossTransferTxId: crossTransferTxId
                 }).then(function () {
-                  return true;
-                }).catch(function () {
-                  return false;
+                  return {
+                    error: 0
+                  };
+                }).catch(function (error) {
+                  if (error.error) {
+                    return error;
+                  }
+
+                  return {
+                    error: 1,
+                    message: error
+                  };
                 }));
 
               case 3:

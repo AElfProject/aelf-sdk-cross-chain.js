@@ -37,6 +37,7 @@ export default class TokenCrossChainBasic {
 
     this.getBoundParentChainHeightAndMerklePathByHeightLimit = queryLimit;
     this.getBoundParentChainHeightAndMerklePathByHeightCount = 0;
+    this.getBoundParentChainHeightAndMerklePathByHeightError = null;
 
     const {
       sha256,
@@ -48,8 +49,8 @@ export default class TokenCrossChainBasic {
 
   async init({
     wallet,
-    contractAddresses,
-    chainIds
+    contractAddresses = null,
+    chainIds = null
   }) {
     const {
       sendInstance,
@@ -206,8 +207,12 @@ export default class TokenCrossChainBasic {
   }) {
     if (this.getBoundParentChainHeightAndMerklePathByHeightCount
       >= this.getBoundParentChainHeightAndMerklePathByHeightLimit) {
-      return Promise.reject(new Error('getBoundParentChainHeightAndMerklePathByHeight too many times!'));
-      // throw Error('getBoundParentChainHeightAndMerklePathByHeight too many times!');
+      return Promise.reject(this.getBoundParentChainHeightAndMerklePathByHeightError);
+      // return Promise.reject(new Error('getBoundParentChainHeightAndMerklePathByHeight too many times!'));
+      // return Promise.reject({
+      //   message: 'getBoundParentChainHeightAndMerklePathByHeight too many times!',
+      //   detail: this.getBoundParentChainHeightAndMerklePathByHeightError
+      // });
     }
     try {
       const {
@@ -224,6 +229,7 @@ export default class TokenCrossChainBasic {
         boundParentChainHeight
       };
     } catch (e) {
+      this.getBoundParentChainHeightAndMerklePathByHeightError = e;
       this.getBoundParentChainHeightAndMerklePathByHeightCount++;
       console.log('>>>>>>>>>>>>>>>> Re getBoundParentChainHeightAndMerklePathByHeight <<<<<');
       console.log(crossTransferTxBlockHeight, e);
@@ -452,7 +458,7 @@ export default class TokenCrossChainBasic {
           if (sideChainHeightInMainChain < crossTransferTxBlockHeight) {
             throw Error(JSON.stringify({
               error: 1,
-              message: `The side chains are not ready to receive tx. 
+              message: `The side chains are not ready to receive tx.
                 The height of the side chain recorded in main chain is ${sideChainHeightInMainChain}.
                 sideChainHeightInMainChain need >= ${crossTransferTxBlockHeight}.`,
               canReceive: true
@@ -469,8 +475,8 @@ export default class TokenCrossChainBasic {
           if (boundParentChainHeight > receiveChainParentChainHeight) {
             throw Error(JSON.stringify({
               error: 1,
-              message: `The side chains are not ready to receive tx. 
-                The boundParentChainHeight of crossChainTransfer is ${boundParentChainHeight} 
+              message: `The side chains are not ready to receive tx.
+                The boundParentChainHeight of crossChainTransfer is ${boundParentChainHeight}
                 The parentChainHeight of the chain which receives the tx is ${receiveChainParentChainHeight}.`,
               canReceive: true
             }));
@@ -495,7 +501,7 @@ export default class TokenCrossChainBasic {
     } else {
       throw Error(JSON.stringify({
         error: 2,
-        message: `Please waiting until the lastIrreversibleBlockHeight[${lastIrreversibleBlockHeight}] 
+        message: `Please waiting until the lastIrreversibleBlockHeight[${lastIrreversibleBlockHeight}]
           >= 'the height[${crossTransferTxBlockHeight}] of transaction of tokenCrossChainInstance.send()'
           `,
         canReceive: true

@@ -91,7 +91,15 @@ export default class CrossChain {
 
     return tokenCrossChainInstance.isChainReadyToReceive({
       crossTransferTxId
-    }).then(() => true).catch(() => false);
+    }).then(() => ({ error: 0 })).catch(error => {
+      if (error.error) {
+        return error;
+      }
+      return {
+        error: 1,
+        message: error
+      };
+    });
   }
 
   async receive({
