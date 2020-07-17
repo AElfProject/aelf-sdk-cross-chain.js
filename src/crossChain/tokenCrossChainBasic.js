@@ -25,13 +25,19 @@ export default class TokenCrossChainBasic {
       sendInstance,
       receiveInstance
     };
+    const {
+      sha256,
+      chainIdConvertor
+    } = AElfUtils;
 
     this.tokenContractName = tokenContractName;
     this.crossChainContractName = crossChainContractName;
 
     // this.crossQueen = {}; // TODO: 跨链发送等待队列
-    this.mainChainId = mainChainId;
-    this.issueChainId = issueChainId;
+    this.mainChainId = typeof mainChainId === 'string'
+      ? chainIdConvertor.base58ToChainId(mainChainId) : mainChainId; // ex: AELF -> 9992731
+    this.issueChainId = typeof issueChainId === 'string'
+      ? chainIdConvertor.base58ToChainId(issueChainId) : issueChainId;
 
     this.reQueryInterval = reQueryInterval;
 
@@ -39,10 +45,6 @@ export default class TokenCrossChainBasic {
     this.getBoundParentChainHeightAndMerklePathByHeightCount = 0;
     this.getBoundParentChainHeightAndMerklePathByHeightError = null;
 
-    const {
-      sha256,
-      chainIdConvertor
-    } = AElfUtils;
     this.sha256 = sha256;
     this.chainIdConvertor = chainIdConvertor;
   }

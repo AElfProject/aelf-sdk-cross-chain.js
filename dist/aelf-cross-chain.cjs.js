@@ -1,5 +1,5 @@
 /*!
- * aelf-sdk-cross-chain.js v1.0.11 
+ * aelf-sdk-cross-chain.js v1.0.12 
  * (c) 2019-2020 AElf 
  * Released under MIT License
  */
@@ -1280,17 +1280,18 @@ function () {
       sendInstance: sendInstance,
       receiveInstance: receiveInstance
     };
+    var sha256 = AElfUtils.sha256,
+        chainIdConvertor = AElfUtils.chainIdConvertor;
     this.tokenContractName = tokenContractName;
     this.crossChainContractName = crossChainContractName; // this.crossQueen = {}; // TODO: 跨链发送等待队列
 
-    this.mainChainId = mainChainId;
-    this.issueChainId = issueChainId;
+    this.mainChainId = typeof mainChainId === 'string' ? chainIdConvertor.base58ToChainId(mainChainId) : mainChainId; // ex: AELF -> 9992731
+
+    this.issueChainId = typeof issueChainId === 'string' ? chainIdConvertor.base58ToChainId(issueChainId) : issueChainId;
     this.reQueryInterval = reQueryInterval;
     this.getBoundParentChainHeightAndMerklePathByHeightLimit = queryLimit;
     this.getBoundParentChainHeightAndMerklePathByHeightCount = 0;
     this.getBoundParentChainHeightAndMerklePathByHeightError = null;
-    var sha256 = AElfUtils.sha256,
-        chainIdConvertor = AElfUtils.chainIdConvertor;
     this.sha256 = sha256;
     this.chainIdConvertor = chainIdConvertor;
   }
