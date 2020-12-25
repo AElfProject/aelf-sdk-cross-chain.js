@@ -1,5 +1,5 @@
 /*!
- * aelf-sdk-cross-chain.js v1.0.12 
+ * aelf-sdk-cross-chain.js v1.0.13 
  * (c) 2019-2020 AElf 
  * Released under MIT License
  */
@@ -1772,14 +1772,14 @@ function () {
       var _isChainReadyToReceive = asyncToGenerator_default()(
       /*#__PURE__*/
       regenerator_default.a.mark(function _callee8(_ref15) {
-        var crossTransferTxId, _this$aelfInstance3, sendInstance, crossChainContractSend, crossChainContractReceive, _ref16, lastIrreversibleBlockHeight, crossTransferTxInfo, crossTransferRawTx, crossTransferTxBlockHeight, chainIdSend, isFromMainChain, isToMainChain, _ref17, boundParentChainHeight, merklePath, crossTransferTxParentBlockHeight, _ref18, parentChainHeight, _ref19, sideChainHeightInMainChain, _ref20, receiveChainParentChainHeight;
+        var crossTransferTxId, _this$aelfInstance3, sendInstance, receiveInstance, crossChainContractSend, crossChainContractReceive, _ref16, lastIrreversibleBlockHeight, crossTransferTxInfo, crossTransferRawTx, crossTransferTxBlockHeight, chainIdSend, isFromMainChain, isToMainChain, _ref17, boundParentChainHeight, merklePath, crossTransferTxParentBlockHeight, _ref18, parentChainHeight, _ref19, sideChainHeightInMainChain, _ref20, receiveChainParentChainHeight, mainChainBlockHeight, _ref21, _receiveChainParentChainHeight;
 
         return regenerator_default.a.wrap(function _callee8$(_context8) {
           while (1) {
             switch (_context8.prev = _context8.next) {
               case 0:
                 crossTransferTxId = _ref15.crossTransferTxId;
-                _this$aelfInstance3 = this.aelfInstance, sendInstance = _this$aelfInstance3.sendInstance, crossChainContractSend = _this$aelfInstance3.crossChainContractSend, crossChainContractReceive = _this$aelfInstance3.crossChainContractReceive;
+                _this$aelfInstance3 = this.aelfInstance, sendInstance = _this$aelfInstance3.sendInstance, receiveInstance = _this$aelfInstance3.receiveInstance, crossChainContractSend = _this$aelfInstance3.crossChainContractSend, crossChainContractReceive = _this$aelfInstance3.crossChainContractReceive;
                 _context8.next = 4;
                 return this.recevieInit({
                   crossTransferTxId: crossTransferTxId
@@ -1795,17 +1795,31 @@ function () {
                 isFromMainChain = _ref16.isFromMainChain;
                 isToMainChain = _ref16.isToMainChain;
 
-                if (!(lastIrreversibleBlockHeight >= crossTransferTxBlockHeight)) {
-                  _context8.next = 52;
+                if (!(lastIrreversibleBlockHeight < crossTransferTxBlockHeight)) {
+                  _context8.next = 14;
                   break;
                 }
 
-                if (!(crossTransferTxInfo.Status && crossTransferTxInfo.Status === 'MINED')) {
-                  _context8.next = 49;
+                throw Error(JSON.stringify({
+                  error: 2,
+                  message: "Please waiting until the lastIrreversibleBlockHeight[".concat(lastIrreversibleBlockHeight, "]\n          >= 'the height[").concat(crossTransferTxBlockHeight, "] of transaction of tokenCrossChainInstance.send()'\n          "),
+                  canReceive: true
+                }));
+
+              case 14:
+                if (!(!crossTransferTxInfo.Status || crossTransferTxInfo.Status !== 'MINED')) {
+                  _context8.next = 16;
                   break;
                 }
 
-                _context8.next = 16;
+                throw Error(JSON.stringify({
+                  error: 3,
+                  message: "The transaction ".concat(crossTransferTxId, " of CrossChainTransfer\n        is ").concat(crossTransferTxInfo.Status, "."),
+                  canReceive: true
+                }));
+
+              case 16:
+                _context8.next = 18;
                 return this.getMerklePath({
                   sendInstance: sendInstance,
                   crossChainContractSend: crossChainContractSend,
@@ -1814,29 +1828,29 @@ function () {
                   isFromMainChain: isFromMainChain
                 });
 
-              case 16:
+              case 18:
                 _ref17 = _context8.sent;
                 boundParentChainHeight = _ref17.boundParentChainHeight;
                 merklePath = _ref17.merklePath;
                 crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
 
                 if (!isFromMainChain) {
-                  _context8.next = 30;
+                  _context8.next = 32;
                   break;
                 }
 
-                _context8.next = 23;
+                _context8.next = 25;
                 return crossChainContractReceive.GetParentChainHeight.call();
 
-              case 23:
+              case 25:
                 _ref18 = _context8.sent;
                 parentChainHeight = _ref18.value;
                 parentChainHeight = parseInt(parentChainHeight, 10); // console.log('parentChainHeight: ', parentChainHeight);
                 // If the crossChainContractReceive belongs to mainChain, we will get {value: '-1'};
                 // If the crossChainContractReceive belongs to sideChain.
 
-                if (!(parentChainHeight >= 0 && parentChainHeight < crossTransferTxBlockHeight)) {
-                  _context8.next = 28;
+                if (!(parentChainHeight >= 0 && parentChainHeight <= crossTransferTxBlockHeight)) {
+                  _context8.next = 30;
                   break;
                 }
 
@@ -1846,66 +1860,92 @@ function () {
                   canReceive: true
                 }));
 
-              case 28:
-                _context8.next = 48;
+              case 30:
+                _context8.next = 61;
                 break;
 
-              case 30:
+              case 32:
                 if (!isToMainChain) {
-                  _context8.next = 40;
+                  _context8.next = 53;
                   break;
                 }
 
                 // side chain to main chain
                 crossTransferTxParentBlockHeight = boundParentChainHeight;
-                _context8.next = 34;
+                _context8.next = 36;
                 return crossChainContractReceive.GetSideChainHeight.call({
                   value: chainIdSend
                 });
 
-              case 34:
+              case 36:
                 _ref19 = _context8.sent;
                 sideChainHeightInMainChain = _ref19.value;
 
                 if (!(sideChainHeightInMainChain < crossTransferTxBlockHeight)) {
-                  _context8.next = 38;
+                  _context8.next = 40;
                   break;
                 }
 
                 throw Error(JSON.stringify({
                   error: 1,
-                  message: "The side chains are not ready to receive tx.\n                The height of the side chain recorded in main chain is ".concat(sideChainHeightInMainChain, ".\n                sideChainHeightInMainChain need >= ").concat(crossTransferTxBlockHeight, "."),
+                  message: "The side chains are not ready to receive tx.\n            The height of the side chain recorded in main chain is ".concat(sideChainHeightInMainChain, ".\n            sideChainHeightInMainChain need >= ").concat(crossTransferTxBlockHeight, "."),
                   canReceive: true
                 }));
 
-              case 38:
-                _context8.next = 48;
-                break;
-
               case 40:
                 _context8.next = 42;
-                return crossChainContractReceive.GetParentChainHeight.call();
+                return crossChainContractSend.GetParentChainHeight.call();
 
               case 42:
                 _ref20 = _context8.sent;
                 receiveChainParentChainHeight = _ref20.value;
-                receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10); // When we call this.getMerklePath
+                _context8.next = 46;
+                return receiveInstance.chain.getBlockHeight();
 
-                if (!(boundParentChainHeight > receiveChainParentChainHeight)) {
-                  _context8.next = 47;
+              case 46:
+                mainChainBlockHeight = _context8.sent;
+                receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10);
+                mainChainBlockHeight = parseInt(mainChainBlockHeight, 10);
+
+                if (!(receiveChainParentChainHeight > mainChainBlockHeight)) {
+                  _context8.next = 51;
                   break;
                 }
 
                 throw Error(JSON.stringify({
                   error: 1,
-                  message: "The side chains are not ready to receive tx.\n                The boundParentChainHeight of crossChainTransfer is ".concat(boundParentChainHeight, "\n                The parentChainHeight of the chain which receives the tx is ").concat(receiveChainParentChainHeight, "."),
+                  message: "The main chains are not ready to receive tx.\n            The boundParentChainHeight of crossChainTransfer is ".concat(boundParentChainHeight, "\n            The parentChainHeight of the chain which receives the tx is ").concat(receiveChainParentChainHeight, "."),
                   canReceive: true
                 }));
 
-              case 47:
+              case 51:
+                _context8.next = 61;
+                break;
+
+              case 53:
+                _context8.next = 55;
+                return crossChainContractReceive.GetParentChainHeight.call();
+
+              case 55:
+                _ref21 = _context8.sent;
+                _receiveChainParentChainHeight = _ref21.value;
+                _receiveChainParentChainHeight = parseInt(_receiveChainParentChainHeight, 10); // When we call this.getMerklePath
+
+                if (!(boundParentChainHeight > _receiveChainParentChainHeight)) {
+                  _context8.next = 60;
+                  break;
+                }
+
+                throw Error(JSON.stringify({
+                  error: 1,
+                  message: "The side chains are not ready to receive tx.\n            The boundParentChainHeight of crossChainTransfer is ".concat(boundParentChainHeight, "\n            The parentChainHeight of the chain which receives the tx is ").concat(_receiveChainParentChainHeight, "."),
+                  canReceive: true
+                }));
+
+              case 60:
                 crossTransferTxParentBlockHeight = boundParentChainHeight;
 
-              case 48:
+              case 61:
                 return _context8.abrupt("return", {
                   isReady: true,
                   crossTransferRawTx: crossTransferRawTx,
@@ -1914,21 +1954,7 @@ function () {
                   crossTransferTxParentBlockHeight: crossTransferTxParentBlockHeight
                 });
 
-              case 49:
-                throw Error(JSON.stringify({
-                  error: 3,
-                  message: "The transaction ".concat(crossTransferTxId, " of CrossChainTransfer\n          is ").concat(crossTransferTxInfo.Status, "."),
-                  canReceive: true
-                }));
-
-              case 52:
-                throw Error(JSON.stringify({
-                  error: 2,
-                  message: "Please waiting until the lastIrreversibleBlockHeight[".concat(lastIrreversibleBlockHeight, "]\n          >= 'the height[").concat(crossTransferTxBlockHeight, "] of transaction of tokenCrossChainInstance.send()'\n          "),
-                  canReceive: true
-                }));
-
-              case 53:
+              case 62:
               case "end":
                 return _context8.stop();
             }
@@ -1947,25 +1973,25 @@ function () {
     value: function () {
       var _receive = asyncToGenerator_default()(
       /*#__PURE__*/
-      regenerator_default.a.mark(function _callee9(_ref21) {
-        var crossTransferTxId, _ref22, crossTransferRawTx, chainIdSend, merklePath, crossTransferTxParentBlockHeight, tokenContractReceive, crossReceiveTxId;
+      regenerator_default.a.mark(function _callee9(_ref22) {
+        var crossTransferTxId, _ref23, crossTransferRawTx, chainIdSend, merklePath, crossTransferTxParentBlockHeight, tokenContractReceive, crossReceiveTxId;
 
         return regenerator_default.a.wrap(function _callee9$(_context9) {
           while (1) {
             switch (_context9.prev = _context9.next) {
               case 0:
-                crossTransferTxId = _ref21.crossTransferTxId;
+                crossTransferTxId = _ref22.crossTransferTxId;
                 _context9.next = 3;
                 return this.isChainReadyToReceive({
                   crossTransferTxId: crossTransferTxId
                 });
 
               case 3:
-                _ref22 = _context9.sent;
-                crossTransferRawTx = _ref22.crossTransferRawTx;
-                chainIdSend = _ref22.chainIdSend;
-                merklePath = _ref22.merklePath;
-                crossTransferTxParentBlockHeight = _ref22.crossTransferTxParentBlockHeight;
+                _ref23 = _context9.sent;
+                crossTransferRawTx = _ref23.crossTransferRawTx;
+                chainIdSend = _ref23.chainIdSend;
+                merklePath = _ref23.merklePath;
+                crossTransferTxParentBlockHeight = _ref23.crossTransferTxParentBlockHeight;
                 tokenContractReceive = this.aelfInstance.tokenContractReceive; // message CrossChainReceiveTokenInput {
                 //   int32 from_chain_id = 1;
                 //   int64 parent_chain_height = 2;

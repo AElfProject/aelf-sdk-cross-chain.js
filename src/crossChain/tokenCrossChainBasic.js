@@ -374,6 +374,7 @@ export default class TokenCrossChainBasic {
   }) {
     const {
       sendInstance,
+      receiveInstance,
       // tokenContractReceive,
       crossChainContractSend,
       crossChainContractReceive
@@ -393,114 +394,7 @@ export default class TokenCrossChainBasic {
 
     // console.log('isFromMainChain isToMainChain: ', isFromMainChain, isToMainChain);
     // console.log('lastIrreversibleBlockHeight: ', lastIrreversibleBlockHeight, crossTransferTxRefBlockHeight);
-    if (lastIrreversibleBlockHeight >= crossTransferTxBlockHeight) {
-      if (crossTransferTxInfo.Status && crossTransferTxInfo.Status === 'MINED') {
-        const {
-          boundParentChainHeight,
-          merklePath
-        } = await this.getMerklePath({
-          sendInstance,
-          crossChainContractSend,
-          crossTransferTxId,
-          crossTransferTxBlockHeight,
-          isFromMainChain
-        });
-        console.log('boundParentChainHeight: ', boundParentChainHeight, isFromMainChain, isToMainChain);
-
-        let crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
-
-        if (isFromMainChain) {
-          // main chain to side chain
-          let {
-            value: parentChainHeight
-          } = await crossChainContractReceive.GetParentChainHeight.call();
-          parentChainHeight = parseInt(parentChainHeight, 10);
-
-          // console.log('parentChainHeight: ', parentChainHeight);
-          // If the crossChainContractReceive belongs to mainChain, we will get {value: '-1'};
-          // If the crossChainContractReceive belongs to sideChain.
-          if (parentChainHeight >= 0 && (parentChainHeight < crossTransferTxBlockHeight)) {
-            throw Error(JSON.stringify({
-              error: 1,
-              message: `the parent chain block at height of ${crossTransferTxBlockHeight}`
-                + 'is not recorded, please waiting.',
-              canReceive: true
-            }));
-          }
-        } else if (isToMainChain) {
-          // side chain to main chain
-          crossTransferTxParentBlockHeight = boundParentChainHeight;
-
-          const {
-            value: sideChainHeightInMainChain
-          } = await crossChainContractReceive.GetSideChainHeight.call({
-            value: chainIdSend
-          });
-
-          // await = receiveInstance.GetChainStatus.call();
-
-          // let {
-          //   value: sendChainParentChainHeight
-          // } = await crossChainContractSend.GetParentChainHeight.call();
-          // sendChainParentChainHeight = parseInt(sendChainParentChainHeight, 10);
-
-          // console.log('??????---------', crossTransferTxParentBlockHeight, sendChainParentChainHeight);
-
-          // if (sendChainParentChainHeight < crossTransferTxParentBlockHeight) {
-          //   console.log('??????---------', crossTransferTxParentBlockHeight, sendChainParentChainHeight);
-          //   // throw Error(JSON.stringify({
-          //   //   error: 1,
-          //   //   message: `The side chains are not ready to receive tx.
-          //   //     The crossTransferTxParentBlockHeight is ${crossTransferTxParentBlockHeight}.
-          //   //     The block height of parent in side chain is ${sendChainParentChainHeight}.`,
-          //   //   canReceive: true
-          //   // }));
-          // }
-
-          if (sideChainHeightInMainChain < crossTransferTxBlockHeight) {
-            throw Error(JSON.stringify({
-              error: 1,
-              message: `The side chains are not ready to receive tx.
-                The height of the side chain recorded in main chain is ${sideChainHeightInMainChain}.
-                sideChainHeightInMainChain need >= ${crossTransferTxBlockHeight}.`,
-              canReceive: true
-            }));
-          }
-        } else {
-          // side chain to side chain
-          let {
-            value: receiveChainParentChainHeight
-          } = await crossChainContractReceive.GetParentChainHeight.call();
-          receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10);
-
-          // When we call this.getMerklePath
-          if (boundParentChainHeight > receiveChainParentChainHeight) {
-            throw Error(JSON.stringify({
-              error: 1,
-              message: `The side chains are not ready to receive tx.
-                The boundParentChainHeight of crossChainTransfer is ${boundParentChainHeight}
-                The parentChainHeight of the chain which receives the tx is ${receiveChainParentChainHeight}.`,
-              canReceive: true
-            }));
-          }
-          crossTransferTxParentBlockHeight = boundParentChainHeight;
-        }
-
-        return {
-          isReady: true,
-          crossTransferRawTx,
-          chainIdSend,
-          merklePath,
-          crossTransferTxParentBlockHeight
-        };
-      }
-      throw Error(JSON.stringify({
-        error: 3,
-        message: `The transaction ${crossTransferTxId} of CrossChainTransfer
-          is ${crossTransferTxInfo.Status}.`,
-        canReceive: true
-      }));
-    } else {
+    if (lastIrreversibleBlockHeight < crossTransferTxBlockHeight) {
       throw Error(JSON.stringify({
         error: 2,
         message: `Please waiting until the lastIrreversibleBlockHeight[${lastIrreversibleBlockHeight}]
@@ -509,6 +403,112 @@ export default class TokenCrossChainBasic {
         canReceive: true
       }));
     }
+
+    if (!crossTransferTxInfo.Status || crossTransferTxInfo.Status !== 'MINED') {
+      throw Error(JSON.stringify({
+        error: 3,
+        message: `The transaction ${crossTransferTxId} of CrossChainTransfer
+        is ${crossTransferTxInfo.Status}.`,
+        canReceive: true
+      }));
+    }
+
+    const {
+      boundParentChainHeight,
+      merklePath
+    } = await this.getMerklePath({
+      sendInstance,
+      crossChainContractSend,
+      crossTransferTxId,
+      crossTransferTxBlockHeight,
+      isFromMainChain
+    });
+    console.log('boundParentChainHeight: ', boundParentChainHeight, isFromMainChain, isToMainChain);
+
+    let crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
+
+    if (isFromMainChain) {
+      // main chain to side chain
+      let {
+        value: parentChainHeight
+      } = await crossChainContractReceive.GetParentChainHeight.call();
+      parentChainHeight = parseInt(parentChainHeight, 10);
+
+      // console.log('parentChainHeight: ', parentChainHeight);
+      // If the crossChainContractReceive belongs to mainChain, we will get {value: '-1'};
+      // If the crossChainContractReceive belongs to sideChain.
+      if (parentChainHeight >= 0 && (parentChainHeight <= crossTransferTxBlockHeight)) {
+        throw Error(JSON.stringify({
+          error: 1,
+          message: `the parent chain block at height of ${crossTransferTxBlockHeight}`
+            + 'is not recorded, please waiting.',
+          canReceive: true
+        }));
+      }
+    } else if (isToMainChain) {
+      // side chain to main chain
+      crossTransferTxParentBlockHeight = boundParentChainHeight;
+
+      const {
+        value: sideChainHeightInMainChain
+      } = await crossChainContractReceive.GetSideChainHeight.call({
+        value: chainIdSend
+      });
+
+      if (sideChainHeightInMainChain < crossTransferTxBlockHeight) {
+        throw Error(JSON.stringify({
+          error: 1,
+          message: `The side chains are not ready to receive tx.
+            The height of the side chain recorded in main chain is ${sideChainHeightInMainChain}.
+            sideChainHeightInMainChain need >= ${crossTransferTxBlockHeight}.`,
+          canReceive: true
+        }));
+      }
+
+      let {
+        value: receiveChainParentChainHeight
+      } = await crossChainContractSend.GetParentChainHeight.call();
+      let mainChainBlockHeight = await receiveInstance.chain.getBlockHeight();
+
+      receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10);
+      mainChainBlockHeight = parseInt(mainChainBlockHeight, 10);
+
+      if (receiveChainParentChainHeight > mainChainBlockHeight) {
+        throw Error(JSON.stringify({
+          error: 1,
+          message: `The main chains are not ready to receive tx.
+            The boundParentChainHeight of crossChainTransfer is ${boundParentChainHeight}
+            The parentChainHeight of the chain which receives the tx is ${receiveChainParentChainHeight}.`,
+          canReceive: true
+        }));
+      }
+    } else {
+      // side chain to side chain
+      let {
+        value: receiveChainParentChainHeight
+      } = await crossChainContractReceive.GetParentChainHeight.call();
+      receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10);
+
+      // When we call this.getMerklePath
+      if (boundParentChainHeight > receiveChainParentChainHeight) {
+        throw Error(JSON.stringify({
+          error: 1,
+          message: `The side chains are not ready to receive tx.
+            The boundParentChainHeight of crossChainTransfer is ${boundParentChainHeight}
+            The parentChainHeight of the chain which receives the tx is ${receiveChainParentChainHeight}.`,
+          canReceive: true
+        }));
+      }
+      crossTransferTxParentBlockHeight = boundParentChainHeight;
+    }
+
+    return {
+      isReady: true,
+      crossTransferRawTx,
+      chainIdSend,
+      merklePath,
+      crossTransferTxParentBlockHeight
+    };
   }
 
   async receive({
