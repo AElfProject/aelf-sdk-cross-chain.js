@@ -108,3 +108,18 @@ export async function getChainIdsAndContractAddresses(options) {
     chainIdReceive
   };
 }
+
+export function chainIdToNumber(chainId, chainIdConvertor) {
+  return typeof chainId === 'string'
+    ? chainIdConvertor.base58ToChainId(chainId) : chainId;
+}
+
+export function getCrossTransferType(chainIdSend, chainIdReceive, mainChainId) {
+  if (chainIdSend === mainChainId) {
+    return 'isFromMainChain';
+  }
+  if (chainIdReceive === mainChainId) {
+    return 'isToMainChain';
+  }
+  return 'isSideToSide';
+}

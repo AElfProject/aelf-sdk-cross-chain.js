@@ -141,21 +141,23 @@ async function init() {
     sendInstance,
     receiveInstance,
     wallet,
+    mainChainId: 9992731,
+    issueChainId: 9992731
   });
-  await crossChainInstance.init();
-  // Can accelerate the process. About 5s.
-  // await crossChainInstance.init({
-  //   contractAddresses: {
-  //     tokenContractAddressSend: '25CecrU94dmMdbhC3LWMKxtoaL4Wv8PChGvVJM6PxkHAyvXEhB',
-  //     crossChainContractAddressSend: 'R8nWLhsyLsY9Di4ULKQ41ddV8j1HbLikT3RjbLBDPGxnJFCv3',
-  //     tokenContractAddressReceive: 'NCsfF8mqPNwaPxps9zvZcYb9RJmMbuD47vu2UY1LypCPZ7DP7',
-  //     crossChainContractAddressReceive: '28PhWPnGzuZ8fxGLfJjJFYZ8eGbANWSasAdH9sFsnhZ8ZC7x9G'
-  //   },
-  //   chainIds: {
-  //     chainIdSend: 'AELF',
-  //     chainIdReceive: 'tDVV'
-  //   }
-  // });
+  // await crossChainInstance.init();
+  // Can accelerate the process.
+  await crossChainInstance.init({
+    contractAddresses: {
+      tokenContractAddressSend: '7RzVGiuVWkvL4VfVHdZfQF2Tri3sgLe9U991bohHFfSRZXuGX',
+      crossChainContractAddressSend: '2snHc8AMh9QMbCAa7XXmdZZVM5EBZUUPDdLjemwUJkBnL6k8z9',
+      tokenContractAddressReceive: 'JRmBduh4nXWi1aXgdUsj5gJrzeZb2LxmrAbf7W99faZSvoAaE',
+      crossChainContractAddressReceive: '2SQ9LeGZYSWmfJcYuQkDQxgd3HzwjamAaaL4Tge2eFSXw2cseq'
+    },
+    chainIds: {
+      chainIdSend: 'tDVV',
+      chainIdReceive: 'AELF'
+    }
+  });
 
   const {
     crossTransferTxId
@@ -165,6 +167,11 @@ async function init() {
     amount: 1,
     memo: 'Hello World'
   });
+
+  // const registerMsg = await crossChainInstance.tokenCrossChainInstance.checkRegister();
+  // const result = await crossChainInstance.isChainReadyToReceive({
+  //   crossTransferTxId: '560f44f346b23eb455fb43b37f8ae1ef28636c5a1fc3a9aed3c55f475c82d0aa'
+  // });
 
   const receiveInfo = await crossChainInstance.receive({
     // crossTransferTxId: 'cad78d4697f23ec34d03956ab17c0c8443d97277f7590d2b178d714d4a9682d3'
@@ -214,6 +221,9 @@ const sendInfo = await tokenCrossChainInstance.send(contractsAndChainIds, params
 const receiveInfo = await tokenCrossChainInstance.receive({
   crossTransferTxId // sendInfo.crossTransferTxId
 });
+
+// const registerMsg = await crossChainInstance.tokenCrossChainInstance.checkRegister();
+const registerMsg = await tokenCrossChainInstance.checkRegister();
 
 ```
 

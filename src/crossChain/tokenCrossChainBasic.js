@@ -6,7 +6,9 @@
 
 // module.exports = class TokenCrossChainBasic {
 import {
-  getChainIdsAndContractAddresses
+  getChainIdsAndContractAddresses,
+  chainIdToNumber,
+  getCrossTransferType
 } from './utils';
 
 export default class TokenCrossChainBasic {
@@ -29,15 +31,14 @@ export default class TokenCrossChainBasic {
       sha256,
       chainIdConvertor
     } = AElfUtils;
+    this.AElfUtils = AElfUtils;
 
     this.tokenContractName = tokenContractName;
     this.crossChainContractName = crossChainContractName;
 
     // this.crossQueen = {}; // TODO: 跨链发送等待队列
-    this.mainChainId = typeof mainChainId === 'string'
-      ? chainIdConvertor.base58ToChainId(mainChainId) : mainChainId; // ex: AELF -> 9992731
-    this.issueChainId = typeof issueChainId === 'string'
-      ? chainIdConvertor.base58ToChainId(issueChainId) : issueChainId;
+    this.mainChainId = chainIdToNumber(mainChainId, chainIdConvertor);
+    this.issueChainId = chainIdToNumber(issueChainId, chainIdConvertor);
 
     this.reQueryInterval = reQueryInterval;
 
@@ -102,13 +103,21 @@ export default class TokenCrossChainBasic {
     this.chainIdSendBase58 = chainIdSend;
     this.chainIdReceiveBase58 = chainIdReceive;
 
+    const { chainIdConvertor } = this.AElfUtils;
+    this.crossTransferType = getCrossTransferType(
+      chainIdToNumber(chainIdSend, chainIdConvertor),
+      chainIdToNumber(chainIdReceive, chainIdConvertor),
+      this.mainChainId
+    );
+
     return {
       tokenContractSend,
       tokenContractReceive,
       crossChainContractSend,
       crossChainContractReceive,
       chainIdSend,
-      chainIdReceive
+      chainIdReceive,
+      crossTransferType: this.crossTransferType
     };
   }
 
@@ -354,9 +363,6 @@ export default class TokenCrossChainBasic {
     const chainIdSend = chainIdConvertor.base58ToChainId(this.chainIdSendBase58);
     const chainIdReceive = chainIdConvertor.base58ToChainId(this.chainIdReceiveBase58);
 
-    const isFromMainChain = chainIdSend === this.mainChainId;
-    const isToMainChain = chainIdReceive === this.mainChainId;
-
     return {
       lastIrreversibleBlockHeight,
       crossTransferTxInfo,
@@ -364,8 +370,6 @@ export default class TokenCrossChainBasic {
       crossTransferTxBlockHeight,
       chainIdSend,
       chainIdReceive,
-      isFromMainChain,
-      isToMainChain
     };
   }
 
@@ -386,8 +390,6 @@ export default class TokenCrossChainBasic {
       crossTransferRawTx,
       crossTransferTxBlockHeight,
       chainIdSend,
-      isFromMainChain,
-      isToMainChain
     } = await this.recevieInit({
       crossTransferTxId
     });
@@ -421,13 +423,13 @@ export default class TokenCrossChainBasic {
       crossChainContractSend,
       crossTransferTxId,
       crossTransferTxBlockHeight,
-      isFromMainChain
+      isFromMainChain: this.crossTransferType === 'isFromMainChain',
     });
-    console.log('boundParentChainHeight: ', boundParentChainHeight, isFromMainChain, isToMainChain);
+    console.log('boundParentChainHeight: ', boundParentChainHeight, this.crossTransferType);
 
     let crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
 
-    if (isFromMainChain) {
+    if (this.crossTransferType === 'isFromMainChain') {
       // main chain to side chain
       let {
         value: parentChainHeight
@@ -445,7 +447,7 @@ export default class TokenCrossChainBasic {
           canReceive: true
         }));
       }
-    } else if (isToMainChain) {
+    } else if (this.crossTransferType === 'isToMainChain') {
       // side chain to main chain
       crossTransferTxParentBlockHeight = boundParentChainHeight;
 
@@ -544,5 +546,51 @@ export default class TokenCrossChainBasic {
       merklePath
     });
     return crossReceiveTxId;
+  }
+
+  // When set up a side chain. Side chain is auto registered in mainChain.
+  // If you want to side transfer to main, check it.
+  // If you want to side transfer to side. check it.
+  async checkRegister() {
+    let result;
+    if (this.crossTransferType === 'isToMainChain') {
+      const address = await this.aelfInstance.tokenContractSend.GetCrossChainTransferTokenContractAddress.call({
+        chainId: this.mainChainId
+      });
+      result = address;
+      if (!address) {
+        throw Error(JSON.stringify({
+          error: 1,
+          message: `Side chain ${this.chainIdSendBase58} not register in ${this.mainChainId}`,
+          canReceive: true
+        }));
+      }
+    }
+    if (this.crossTransferType === 'isSideToSide') {
+      const addresses = await Promise.all([
+        this.aelfInstance.tokenContractSend.GetCrossChainTransferTokenContractAddress.call({
+          chainId: this.mainChainId
+        }),
+        this.aelfInstance.tokenContractReceive.GetCrossChainTransferTokenContractAddress.call({
+          chainId: this.mainChainId
+        })
+      ]);
+      result = addresses;
+      // eslint-disable-next-line no-restricted-syntax
+      for (const address of addresses) {
+        if (!address) {
+          throw Error(JSON.stringify({
+            error: 1,
+            message: `One of the side chain not register in ${this.mainChainId}`,
+            canReceive: true
+          }));
+        }
+      }
+    }
+    return {
+      error: 0,
+      msg: 'Registered',
+      result
+    };
   }
 }

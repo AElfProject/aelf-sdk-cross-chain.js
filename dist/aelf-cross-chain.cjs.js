@@ -1,5 +1,5 @@
 /*!
- * aelf-sdk-cross-chain.js v1.0.13 
+ * aelf-sdk-cross-chain.js v1.0.14 
  * (c) 2019-2020 AElf 
  * Released under MIT License
  */
@@ -1233,6 +1233,21 @@ function _getChainIdsAndContractAddresses() {
   }));
   return _getChainIdsAndContractAddresses.apply(this, arguments);
 }
+
+function chainIdToNumber(chainId, chainIdConvertor) {
+  return typeof chainId === 'string' ? chainIdConvertor.base58ToChainId(chainId) : chainId;
+}
+function getCrossTransferType(chainIdSend, chainIdReceive, mainChainId) {
+  if (chainIdSend === mainChainId) {
+    return 'isFromMainChain';
+  }
+
+  if (chainIdReceive === mainChainId) {
+    return 'isToMainChain';
+  }
+
+  return 'isSideToSide';
+}
 // CONCATENATED MODULE: ./src/crossChain/tokenCrossChainBasic.js
 
 
@@ -1282,12 +1297,12 @@ function () {
     };
     var sha256 = AElfUtils.sha256,
         chainIdConvertor = AElfUtils.chainIdConvertor;
+    this.AElfUtils = AElfUtils;
     this.tokenContractName = tokenContractName;
     this.crossChainContractName = crossChainContractName; // this.crossQueen = {}; // TODO: 跨链发送等待队列
 
-    this.mainChainId = typeof mainChainId === 'string' ? chainIdConvertor.base58ToChainId(mainChainId) : mainChainId; // ex: AELF -> 9992731
-
-    this.issueChainId = typeof issueChainId === 'string' ? chainIdConvertor.base58ToChainId(issueChainId) : issueChainId;
+    this.mainChainId = chainIdToNumber(mainChainId, chainIdConvertor);
+    this.issueChainId = chainIdToNumber(issueChainId, chainIdConvertor);
     this.reQueryInterval = reQueryInterval;
     this.getBoundParentChainHeightAndMerklePathByHeightLimit = queryLimit;
     this.getBoundParentChainHeightAndMerklePathByHeightCount = 0;
@@ -1302,7 +1317,7 @@ function () {
       var _init = asyncToGenerator_default()(
       /*#__PURE__*/
       regenerator_default.a.mark(function _callee(_ref2) {
-        var wallet, _ref2$contractAddress, contractAddresses, _ref2$chainIds, chainIds, _this$aelfInstance, sendInstance, receiveInstance, tokenContractName, crossChainContractName, sha256, _ref3, tokenContractAddressSend, crossChainContractAddressSend, tokenContractAddressReceive, crossChainContractAddressReceive, chainIdSend, chainIdReceive, _ref4, _ref5, tokenContractSend, crossChainContractSend, tokenContractReceive, crossChainContractReceive;
+        var wallet, _ref2$contractAddress, contractAddresses, _ref2$chainIds, chainIds, _this$aelfInstance, sendInstance, receiveInstance, tokenContractName, crossChainContractName, sha256, _ref3, tokenContractAddressSend, crossChainContractAddressSend, tokenContractAddressReceive, crossChainContractAddressReceive, chainIdSend, chainIdReceive, _ref4, _ref5, tokenContractSend, crossChainContractSend, tokenContractReceive, crossChainContractReceive, chainIdConvertor;
 
         return regenerator_default.a.wrap(function _callee$(_context) {
           while (1) {
@@ -1347,16 +1362,19 @@ function () {
                 this.aelfInstance.crossChainContractReceive = crossChainContractReceive;
                 this.chainIdSendBase58 = chainIdSend;
                 this.chainIdReceiveBase58 = chainIdReceive;
+                chainIdConvertor = this.AElfUtils.chainIdConvertor;
+                this.crossTransferType = getCrossTransferType(chainIdToNumber(chainIdSend, chainIdConvertor), chainIdToNumber(chainIdReceive, chainIdConvertor), this.mainChainId);
                 return _context.abrupt("return", {
                   tokenContractSend: tokenContractSend,
                   tokenContractReceive: tokenContractReceive,
                   crossChainContractSend: crossChainContractSend,
                   crossChainContractReceive: crossChainContractReceive,
                   chainIdSend: chainIdSend,
-                  chainIdReceive: chainIdReceive
+                  chainIdReceive: chainIdReceive,
+                  crossTransferType: this.crossTransferType
                 });
 
-              case 27:
+              case 29:
               case "end":
                 return _context.stop();
             }
@@ -1697,7 +1715,7 @@ function () {
       var _recevieInit = asyncToGenerator_default()(
       /*#__PURE__*/
       regenerator_default.a.mark(function _callee7(_ref12) {
-        var crossTransferTxId, chainIdConvertor, _this$aelfInstance2, sendInstance, tokenContractSend, tokenContractReceive, _ref13, lastIrreversibleBlockHeight, _ref14, crossTransferTxInfo, crossTransferRawTx, crossTransferTxBlockHeight, chainIdSend, chainIdReceive, isFromMainChain, isToMainChain;
+        var crossTransferTxId, chainIdConvertor, _this$aelfInstance2, sendInstance, tokenContractSend, tokenContractReceive, _ref13, lastIrreversibleBlockHeight, _ref14, crossTransferTxInfo, crossTransferRawTx, crossTransferTxBlockHeight, chainIdSend, chainIdReceive;
 
         return regenerator_default.a.wrap(function _callee7$(_context7) {
           while (1) {
@@ -1739,20 +1757,16 @@ function () {
                 crossTransferTxBlockHeight = crossTransferTxInfo.BlockNumber;
                 chainIdSend = chainIdConvertor.base58ToChainId(this.chainIdSendBase58);
                 chainIdReceive = chainIdConvertor.base58ToChainId(this.chainIdReceiveBase58);
-                isFromMainChain = chainIdSend === this.mainChainId;
-                isToMainChain = chainIdReceive === this.mainChainId;
                 return _context7.abrupt("return", {
                   lastIrreversibleBlockHeight: lastIrreversibleBlockHeight,
                   crossTransferTxInfo: crossTransferTxInfo,
                   crossTransferRawTx: crossTransferRawTx,
                   crossTransferTxBlockHeight: crossTransferTxBlockHeight,
                   chainIdSend: chainIdSend,
-                  chainIdReceive: chainIdReceive,
-                  isFromMainChain: isFromMainChain,
-                  isToMainChain: isToMainChain
+                  chainIdReceive: chainIdReceive
                 });
 
-              case 20:
+              case 18:
               case "end":
                 return _context7.stop();
             }
@@ -1772,7 +1786,7 @@ function () {
       var _isChainReadyToReceive = asyncToGenerator_default()(
       /*#__PURE__*/
       regenerator_default.a.mark(function _callee8(_ref15) {
-        var crossTransferTxId, _this$aelfInstance3, sendInstance, receiveInstance, crossChainContractSend, crossChainContractReceive, _ref16, lastIrreversibleBlockHeight, crossTransferTxInfo, crossTransferRawTx, crossTransferTxBlockHeight, chainIdSend, isFromMainChain, isToMainChain, _ref17, boundParentChainHeight, merklePath, crossTransferTxParentBlockHeight, _ref18, parentChainHeight, _ref19, sideChainHeightInMainChain, _ref20, receiveChainParentChainHeight, mainChainBlockHeight, _ref21, _receiveChainParentChainHeight;
+        var crossTransferTxId, _this$aelfInstance3, sendInstance, receiveInstance, crossChainContractSend, crossChainContractReceive, _ref16, lastIrreversibleBlockHeight, crossTransferTxInfo, crossTransferRawTx, crossTransferTxBlockHeight, chainIdSend, _ref17, boundParentChainHeight, merklePath, crossTransferTxParentBlockHeight, _ref18, parentChainHeight, _ref19, sideChainHeightInMainChain, _ref20, receiveChainParentChainHeight, mainChainBlockHeight, _ref21, _receiveChainParentChainHeight;
 
         return regenerator_default.a.wrap(function _callee8$(_context8) {
           while (1) {
@@ -1792,11 +1806,9 @@ function () {
                 crossTransferRawTx = _ref16.crossTransferRawTx;
                 crossTransferTxBlockHeight = _ref16.crossTransferTxBlockHeight;
                 chainIdSend = _ref16.chainIdSend;
-                isFromMainChain = _ref16.isFromMainChain;
-                isToMainChain = _ref16.isToMainChain;
 
                 if (!(lastIrreversibleBlockHeight < crossTransferTxBlockHeight)) {
-                  _context8.next = 14;
+                  _context8.next = 12;
                   break;
                 }
 
@@ -1806,9 +1818,9 @@ function () {
                   canReceive: true
                 }));
 
-              case 14:
+              case 12:
                 if (!(!crossTransferTxInfo.Status || crossTransferTxInfo.Status !== 'MINED')) {
-                  _context8.next = 16;
+                  _context8.next = 14;
                   break;
                 }
 
@@ -1818,31 +1830,31 @@ function () {
                   canReceive: true
                 }));
 
-              case 16:
-                _context8.next = 18;
+              case 14:
+                _context8.next = 16;
                 return this.getMerklePath({
                   sendInstance: sendInstance,
                   crossChainContractSend: crossChainContractSend,
                   crossTransferTxId: crossTransferTxId,
                   crossTransferTxBlockHeight: crossTransferTxBlockHeight,
-                  isFromMainChain: isFromMainChain
+                  isFromMainChain: this.crossTransferType === 'isFromMainChain'
                 });
 
-              case 18:
+              case 16:
                 _ref17 = _context8.sent;
                 boundParentChainHeight = _ref17.boundParentChainHeight;
                 merklePath = _ref17.merklePath;
                 crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
 
-                if (!isFromMainChain) {
-                  _context8.next = 32;
+                if (!(this.crossTransferType === 'isFromMainChain')) {
+                  _context8.next = 30;
                   break;
                 }
 
-                _context8.next = 25;
+                _context8.next = 23;
                 return crossChainContractReceive.GetParentChainHeight.call();
 
-              case 25:
+              case 23:
                 _ref18 = _context8.sent;
                 parentChainHeight = _ref18.value;
                 parentChainHeight = parseInt(parentChainHeight, 10); // console.log('parentChainHeight: ', parentChainHeight);
@@ -1850,7 +1862,7 @@ function () {
                 // If the crossChainContractReceive belongs to sideChain.
 
                 if (!(parentChainHeight >= 0 && parentChainHeight <= crossTransferTxBlockHeight)) {
-                  _context8.next = 30;
+                  _context8.next = 28;
                   break;
                 }
 
@@ -1860,29 +1872,29 @@ function () {
                   canReceive: true
                 }));
 
-              case 30:
-                _context8.next = 61;
+              case 28:
+                _context8.next = 59;
                 break;
 
-              case 32:
-                if (!isToMainChain) {
-                  _context8.next = 53;
+              case 30:
+                if (!(this.crossTransferType === 'isToMainChain')) {
+                  _context8.next = 51;
                   break;
                 }
 
                 // side chain to main chain
                 crossTransferTxParentBlockHeight = boundParentChainHeight;
-                _context8.next = 36;
+                _context8.next = 34;
                 return crossChainContractReceive.GetSideChainHeight.call({
                   value: chainIdSend
                 });
 
-              case 36:
+              case 34:
                 _ref19 = _context8.sent;
                 sideChainHeightInMainChain = _ref19.value;
 
                 if (!(sideChainHeightInMainChain < crossTransferTxBlockHeight)) {
-                  _context8.next = 40;
+                  _context8.next = 38;
                   break;
                 }
 
@@ -1892,23 +1904,23 @@ function () {
                   canReceive: true
                 }));
 
-              case 40:
-                _context8.next = 42;
+              case 38:
+                _context8.next = 40;
                 return crossChainContractSend.GetParentChainHeight.call();
 
-              case 42:
+              case 40:
                 _ref20 = _context8.sent;
                 receiveChainParentChainHeight = _ref20.value;
-                _context8.next = 46;
+                _context8.next = 44;
                 return receiveInstance.chain.getBlockHeight();
 
-              case 46:
+              case 44:
                 mainChainBlockHeight = _context8.sent;
                 receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10);
                 mainChainBlockHeight = parseInt(mainChainBlockHeight, 10);
 
                 if (!(receiveChainParentChainHeight > mainChainBlockHeight)) {
-                  _context8.next = 51;
+                  _context8.next = 49;
                   break;
                 }
 
@@ -1918,21 +1930,21 @@ function () {
                   canReceive: true
                 }));
 
-              case 51:
-                _context8.next = 61;
+              case 49:
+                _context8.next = 59;
                 break;
 
-              case 53:
-                _context8.next = 55;
+              case 51:
+                _context8.next = 53;
                 return crossChainContractReceive.GetParentChainHeight.call();
 
-              case 55:
+              case 53:
                 _ref21 = _context8.sent;
                 _receiveChainParentChainHeight = _ref21.value;
                 _receiveChainParentChainHeight = parseInt(_receiveChainParentChainHeight, 10); // When we call this.getMerklePath
 
                 if (!(boundParentChainHeight > _receiveChainParentChainHeight)) {
-                  _context8.next = 60;
+                  _context8.next = 58;
                   break;
                 }
 
@@ -1942,10 +1954,10 @@ function () {
                   canReceive: true
                 }));
 
-              case 60:
+              case 58:
                 crossTransferTxParentBlockHeight = boundParentChainHeight;
 
-              case 61:
+              case 59:
                 return _context8.abrupt("return", {
                   isReady: true,
                   crossTransferRawTx: crossTransferRawTx,
@@ -1954,7 +1966,7 @@ function () {
                   crossTransferTxParentBlockHeight: crossTransferTxParentBlockHeight
                 });
 
-              case 62:
+              case 60:
               case "end":
                 return _context8.stop();
             }
@@ -2032,6 +2044,148 @@ function () {
       }
 
       return receive;
+    }() // When set up a side chain. Side chain is auto registered in mainChain.
+    // If you want to side transfer to main, check it.
+    // If you want to side transfer to side. check it.
+
+  }, {
+    key: "checkRegister",
+    value: function () {
+      var _checkRegister = asyncToGenerator_default()(
+      /*#__PURE__*/
+      regenerator_default.a.mark(function _callee10() {
+        var result, address, addresses, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, _address;
+
+        return regenerator_default.a.wrap(function _callee10$(_context10) {
+          while (1) {
+            switch (_context10.prev = _context10.next) {
+              case 0:
+                if (!(this.crossTransferType === 'isToMainChain')) {
+                  _context10.next = 7;
+                  break;
+                }
+
+                _context10.next = 3;
+                return this.aelfInstance.tokenContractSend.GetCrossChainTransferTokenContractAddress.call({
+                  chainId: this.mainChainId
+                });
+
+              case 3:
+                address = _context10.sent;
+                result = address;
+
+                if (address) {
+                  _context10.next = 7;
+                  break;
+                }
+
+                throw Error(JSON.stringify({
+                  error: 1,
+                  message: "Side chain ".concat(this.chainIdSendBase58, " not register in ").concat(this.mainChainId),
+                  canReceive: true
+                }));
+
+              case 7:
+                if (!(this.crossTransferType === 'isSideToSide')) {
+                  _context10.next = 38;
+                  break;
+                }
+
+                _context10.next = 10;
+                return Promise.all([this.aelfInstance.tokenContractSend.GetCrossChainTransferTokenContractAddress.call({
+                  chainId: this.mainChainId
+                }), this.aelfInstance.tokenContractReceive.GetCrossChainTransferTokenContractAddress.call({
+                  chainId: this.mainChainId
+                })]);
+
+              case 10:
+                addresses = _context10.sent;
+                result = addresses; // eslint-disable-next-line no-restricted-syntax
+
+                _iteratorNormalCompletion = true;
+                _didIteratorError = false;
+                _iteratorError = undefined;
+                _context10.prev = 15;
+                _iterator = addresses[Symbol.iterator]();
+
+              case 17:
+                if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+                  _context10.next = 24;
+                  break;
+                }
+
+                _address = _step.value;
+
+                if (_address) {
+                  _context10.next = 21;
+                  break;
+                }
+
+                throw Error(JSON.stringify({
+                  error: 1,
+                  message: "One of the side chain not register in ".concat(this.mainChainId),
+                  canReceive: true
+                }));
+
+              case 21:
+                _iteratorNormalCompletion = true;
+                _context10.next = 17;
+                break;
+
+              case 24:
+                _context10.next = 30;
+                break;
+
+              case 26:
+                _context10.prev = 26;
+                _context10.t0 = _context10["catch"](15);
+                _didIteratorError = true;
+                _iteratorError = _context10.t0;
+
+              case 30:
+                _context10.prev = 30;
+                _context10.prev = 31;
+
+                if (!_iteratorNormalCompletion && _iterator.return != null) {
+                  _iterator.return();
+                }
+
+              case 33:
+                _context10.prev = 33;
+
+                if (!_didIteratorError) {
+                  _context10.next = 36;
+                  break;
+                }
+
+                throw _iteratorError;
+
+              case 36:
+                return _context10.finish(33);
+
+              case 37:
+                return _context10.finish(30);
+
+              case 38:
+                return _context10.abrupt("return", {
+                  error: 0,
+                  msg: 'Registered',
+                  result: result
+                });
+
+              case 39:
+              case "end":
+                return _context10.stop();
+            }
+          }
+        }, _callee10, this, [[15, 26, 30, 38], [31,, 33, 37]]);
+      }));
+
+      function checkRegister() {
+        return _checkRegister.apply(this, arguments);
+      }
+
+      return checkRegister;
     }()
   }]);
 
@@ -2337,7 +2491,7 @@ function () {
 /* harmony default export */ var src = __webpack_exports__["default"] = ({
   TokenCrossChainBasic: tokenCrossChainBasic_TokenCrossChainBasic,
   CrossChain: crossChain_CrossChain,
-  utils: /* Cannot get final name for export "default" in "./src/crossChain/utils.js" (known exports: decodeCrossChainTxFromBase64 getChainIdsAndContractAddresses, known reexports: ) */ undefined
+  utils: /* Cannot get final name for export "default" in "./src/crossChain/utils.js" (known exports: decodeCrossChainTxFromBase64 getChainIdsAndContractAddresses chainIdToNumber getCrossTransferType, known reexports: ) */ undefined
 });
 
 /***/ })
