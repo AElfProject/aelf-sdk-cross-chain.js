@@ -277,13 +277,7 @@ export default class TokenCrossChainBasic {
   //   ]
   // }
   /* eslint-enable max-len */
-  async getMerklePath({
-    sendInstance,
-    crossChainContractSend,
-    crossTransferTxId,
-    crossTransferTxBlockHeight,
-    isFromMainChain = false
-  }) {
+  async getMerklePath({ sendInstance, crossTransferTxId }) {
     const merklePathByTxId = await sendInstance.chain.getMerklePathByTxId(crossTransferTxId);
     const merklePath = {
       merklePathNodes: [...merklePathByTxId.MerklePathNodes]
@@ -296,29 +290,7 @@ export default class TokenCrossChainBasic {
       isLeftChildNode: item.IsLeftChildNode
     }));
 
-    let boundParentChainHeight = -1;
-    // [chain]side to side, side to main.
-    if (!isFromMainChain) {
-      // console.log('crossTransferTxBlockHeight 111: ', crossTransferTxBlockHeight);
-      // If we can not GetBoundParentChainHeightAndMerklePathByHeight from the chain
-      // It will throw a error.
-      const {
-        merklePathFromParentChain,
-        boundParentChainHeight: boundParentChainHeightTemp
-      } = await this.getBoundParentChainHeightAndMerklePathByHeight({
-        crossChainContractSend,
-        crossTransferTxBlockHeight
-      });
-
-      // console.log('merklePathFromParentChain: ', merklePath, merklePathFromParentChain);
-
-      boundParentChainHeight = boundParentChainHeightTemp;
-      merklePath.merklePathNodes = [...merklePath.merklePathNodes, ...merklePathFromParentChain.merklePathNodes];
-      // console.log('boundParentChainHeight: ', boundParentChainHeightTemp, crossTransferTxBlockHeight);
-    }
-
     return {
-      boundParentChainHeight,
       merklePath
     };
   }
@@ -415,18 +387,10 @@ export default class TokenCrossChainBasic {
       }));
     }
 
-    const {
-      boundParentChainHeight,
-      merklePath
-    } = await this.getMerklePath({
+    const { merklePath } = await this.getMerklePath({
       sendInstance,
-      crossChainContractSend,
       crossTransferTxId,
-      crossTransferTxBlockHeight,
-      isFromMainChain: this.crossTransferType === 'isFromMainChain',
     });
-    console.log('boundParentChainHeight: ', boundParentChainHeight, this.crossTransferType);
-
     let crossTransferTxParentBlockHeight = crossTransferTxBlockHeight;
 
     if (this.crossTransferType === 'isFromMainChain') {
@@ -449,8 +413,6 @@ export default class TokenCrossChainBasic {
       }
     } else if (this.crossTransferType === 'isToMainChain') {
       // side chain to main chain
-      crossTransferTxParentBlockHeight = boundParentChainHeight;
-
       const {
         value: sideChainHeightInMainChain
       } = await crossChainContractReceive.GetSideChainHeight.call({
@@ -479,11 +441,21 @@ export default class TokenCrossChainBasic {
         throw Error(JSON.stringify({
           error: 1,
           message: `The main chains are not ready to receive tx.
-            The boundParentChainHeight of crossChainTransfer is ${boundParentChainHeight}
+            The mainChainBlockHeight of crossChainTransfer is ${mainChainBlockHeight}
             The parentChainHeight of the chain which receives the tx is ${receiveChainParentChainHeight}.`,
           canReceive: true
         }));
       }
+
+      const {
+        merklePathFromParentChain,
+        boundParentChainHeight
+      } = await this.getBoundParentChainHeightAndMerklePathByHeight({
+        crossChainContractSend,
+        crossTransferTxBlockHeight
+      });
+      crossTransferTxParentBlockHeight = boundParentChainHeight;
+      merklePath.merklePathNodes = [...merklePath.merklePathNodes, ...merklePathFromParentChain.merklePathNodes];
     } else {
       // side chain to side chain
       let {
@@ -491,6 +463,15 @@ export default class TokenCrossChainBasic {
       } = await crossChainContractReceive.GetParentChainHeight.call();
       receiveChainParentChainHeight = parseInt(receiveChainParentChainHeight, 10);
 
+      const {
+        merklePathFromParentChain,
+        boundParentChainHeight
+      } = await this.getBoundParentChainHeightAndMerklePathByHeight({
+        crossChainContractSend,
+        crossTransferTxBlockHeight
+      });
+      crossTransferTxParentBlockHeight = boundParentChainHeight;
+      merklePath.merklePathNodes = [...merklePath.merklePathNodes, ...merklePathFromParentChain.merklePathNodes];
       // When we call this.getMerklePath
       if (boundParentChainHeight > receiveChainParentChainHeight) {
         throw Error(JSON.stringify({
@@ -501,7 +482,6 @@ export default class TokenCrossChainBasic {
           canReceive: true
         }));
       }
-      crossTransferTxParentBlockHeight = boundParentChainHeight;
     }
 
     return {
